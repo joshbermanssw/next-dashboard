@@ -14,6 +14,12 @@ Transform the shadcn dashboard-01 template into the DosshPay customer banking hu
 
 Existing dashboard features (KPI cards, area chart, data table) remain as-is. No new banking features are in scope.
 
+### Migration Notes
+
+- The current project has dashboard content duplicated at both `src/app/page.tsx` and `src/app/dashboard/page.tsx` (identical components). These will be consolidated into the `(dashboard)` route group.
+- `next-themes` is installed but unused. Remove it — dark-first is the only mode for v1, no toggle needed.
+- Package manager is npm (not pnpm). The marketing site uses pnpm but this project was bootstrapped with npm.
+
 ## Context
 
 - **Marketing site** exists at a separate repo with its own CLAUDE.md and design.md
@@ -170,6 +176,13 @@ Replace all oklch CSS variables in `globals.css` with DosshPay hex tokens.
 | `--sidebar-foreground` | oklch dark | `#E2E6FF` blueLight |
 | `--sidebar-primary` | oklch primary | `#74BBF2` accentBlue |
 | `--sidebar-accent` | oklch accent | `#111C3A` blueDark |
+| `--popover` | oklch white | `#E8E8E8` surfaceCardPrimary |
+| `--popover-foreground` | oklch dark | `#111C3A` blueDark |
+| `--chart-1` | oklch gray | `#74BBF2` accentBlue |
+| `--chart-2` | oklch gray | `#5EA2D8` accentBlueHover |
+| `--chart-3` | oklch gray | `#404476` surfaceCardBlue |
+| `--chart-4` | oklch gray | `#E2E6FF` blueLight |
+| `--chart-5` | oklch gray | `#56CADB` cyan accent |
 
 ### Tailwind Theme Extensions
 
@@ -226,10 +239,10 @@ Comprehensive project guidelines covering:
 **Project Overview**
 - DosshPay Dashboard — customer banking hub
 - Stack: Next.js 16, React 19, TypeScript strict, Tailwind v4, shadcn/ui, Inter font
-- Package manager: pnpm
+- Package manager: npm
 
 **Commands**
-- `pnpm dev`, `pnpm build`, `pnpm lint`, `pnpm start`
+- `npm run dev`, `npm run build`, `npm run lint`, `npm run start`
 
 **Project Structure**
 - Full annotated tree matching the route architecture above
