@@ -18,16 +18,24 @@ export async function encrypt(payload: SessionPayload): Promise<string> {
 }
 
 export async function decrypt(
-  session: string | undefined = ""
+  session: string | undefined
 ): Promise<SessionPayload | null> {
+  if (!session) return null
   try {
     const { payload } = await jwtVerify(session, encodedKey, {
       algorithms: ["HS256"],
     })
+    if (
+      typeof payload.userId !== "string" ||
+      typeof payload.role !== "string" ||
+      typeof payload.expiresAt !== "string"
+    ) {
+      return null
+    }
     return {
-      userId: payload.userId as string,
-      role: payload.role as string,
-      expiresAt: new Date(payload.expiresAt as string),
+      userId: payload.userId,
+      role: payload.role,
+      expiresAt: new Date(payload.expiresAt),
     }
   } catch {
     return null
@@ -56,16 +64,17 @@ export async function updateSession(): Promise<void> {
   const session = cookieStore.get("session")?.value
   const payload = await decrypt(session)
 
-  if (!session || !payload) {
+  if (!payload) {
     return
   }
 
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  const newSession = await encrypt({ ...payload, expiresAt })
 
-  cookieStore.set("session", session, {
+  cookieStore.set("session", newSession, {
     httpOnly: true,
     secure: true,
-    expires,
+    expires: expiresAt,
     sameSite: "lax",
     path: "/",
   })
