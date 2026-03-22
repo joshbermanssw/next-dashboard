@@ -2,14 +2,11 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-inter);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,75 +43,69 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* DosshPay named color tokens */
+  --color-neutralBlack: #000000;
+  --color-neutralWhite: #F2F2F2;
+  --color-neutralLight: #AAAAAA;
+  --color-grey: #CCCCCC;
+  --color-neutral: #666666;
+  --color-neutralDark: #444444;
+  --color-neutralDarker: #222222;
+  --color-blueDarker: #00032E;
+  --color-blueDark: #111C3A;
+  --color-blue: #2A355A;
+  --color-surfaceCardBlue: #404476;
+  --color-accentBlue: #74BBF2;
+  --color-accentBlueHover: #5EA2D8;
+  --color-blueLight: #E2E6FF;
+  --color-blueLightest: #F5F7FF;
+  --color-surfaceCardPrimary: #E8E8E8;
+  --color-surfaceCardSecondary: #D8D8D8;
+  --color-surfaceCardTertiary: #E7EBF2;
+
+  /* DosshPay body text size tokens */
+  --text-large-medium: 1.125rem;
+  --text-medium-regular: 1.125rem;
+  --text-regular-medium: 1rem;
+  --text-small-normal: 1rem;
+  --text-tiny-normal: 0.875rem;
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  /* DosshPay dark-first theme */
+  --background: #000000;
+  --foreground: #F5F7FF;
+  --card: #E8E8E8;
+  --card-foreground: #111C3A;
+  --popover: #E8E8E8;
+  --popover-foreground: #111C3A;
+  --primary: #74BBF2;
+  --primary-foreground: #2A355A;
+  --secondary: #00032E;
+  --secondary-foreground: #F5F7FF;
+  --muted: #111C3A;
+  --muted-foreground: #E2E6FF;
+  --accent: #00032E;
+  --accent-foreground: #74BBF2;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: rgba(116, 187, 242, 0.15);
+  --input: rgba(116, 187, 242, 0.2);
+  --ring: #74BBF2;
+  --chart-1: #74BBF2;
+  --chart-2: #5EA2D8;
+  --chart-3: #404476;
+  --chart-4: #E2E6FF;
+  --chart-5: #56CADB;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: #00032E;
+  --sidebar-foreground: #E2E6FF;
+  --sidebar-primary: #74BBF2;
+  --sidebar-primary-foreground: #2A355A;
+  --sidebar-accent: #111C3A;
+  --sidebar-accent-foreground: #F5F7FF;
+  --sidebar-border: rgba(116, 187, 242, 0.15);
+  --sidebar-ring: #74BBF2;
 }
 
 @layer base {
