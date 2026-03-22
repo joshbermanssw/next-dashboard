@@ -1,12 +1,13 @@
 "use server"
 
 import { redirect } from "next/navigation"
-import { LoginFormSchema } from "@/lib/definitions"
+import { LoginFormSchema, type LoginFormState } from "@/lib/definitions"
 import { createSession, deleteSession } from "@/lib/session"
 
 export async function login(
+  _prevState: LoginFormState,
   formData: FormData
-): Promise<{ errors?: Record<string, string[]>; message?: string } | void> {
+): Promise<LoginFormState> {
   // 1. Validate input
   const validatedFields = LoginFormSchema.safeParse({
     email: formData.get("email"),
