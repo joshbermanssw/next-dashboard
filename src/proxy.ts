@@ -5,7 +5,7 @@ const publicRoutes = ["/login"]
 
 export function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname
-  const isPublicRoute = publicRoutes.some((route) => path.startsWith(route))
+  const isPublicRoute = publicRoutes.includes(path)
   const sessionCookie = req.cookies.get("session")?.value
 
   // Unauthenticated user trying to access protected route -> redirect to login
