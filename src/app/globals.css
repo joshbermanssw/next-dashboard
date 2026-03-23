@@ -52,6 +52,7 @@
   --color-neutral: #666666;
   --color-neutralDark: #444444;
   --color-neutralDarker: #222222;
+  --color-blueDarkest: #000217;
   --color-blueDarker: #00032E;
   --color-blueDark: #111C3A;
   --color-blue: #2A355A;
@@ -60,7 +61,8 @@
   --color-accentBlueHover: #5EA2D8;
   --color-blueLight: #E2E6FF;
   --color-blueLightest: #F5F7FF;
-  --color-surfaceCardPrimary: #E8E8E8;
+  --color-surfaceCardPrimary: #FFFFFFE6;
+  --color-surfaceCardDark: #FFFFFF26;
   --color-surfaceCardSecondary: #D8D8D8;
   --color-surfaceCardTertiary: #E7EBF2;
 
@@ -74,7 +76,7 @@
 
 :root {
   /* DosshPay dark-first theme */
-  --background: #000000;
+  /* --background: var(--color-blueDarker); */
   --foreground: #F5F7FF;
   --card: #E8E8E8;
   --card-foreground: #111C3A;
@@ -117,5 +119,14 @@
   }
   html {
     @apply font-sans;
+  }
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: var(--foreground);
+    transition: background-color 5000s ease-in-out 0s;
+    box-shadow: inset 0 0 20px 20px transparent;
   }
 }
