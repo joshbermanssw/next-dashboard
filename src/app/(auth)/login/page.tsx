@@ -5,11 +5,11 @@ import { login } from "@/actions/auth"
 import type { LoginFormState } from "@/lib/definitions"
 import Container from "@/components/util/container"
 import HeadingTag from "@/components/util/heading-tag"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Field, FieldError, FieldLabel } from "@/components/ui/field"
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group"
-import { MdLock, MdMail, MdVisibilityOff, MdVisibility } from "react-icons/md";
+import { MdLock, MdMail, MdVisibilityOff, MdVisibility, MdSync } from "react-icons/md";
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 
 const LoginForm = ({ formAction, state, pending }: { formAction: any, state: LoginFormState, pending: boolean }) => {
   const [showPassword, setShowPassword] = useState(false)
@@ -37,14 +37,29 @@ const LoginForm = ({ formAction, state, pending }: { formAction: any, state: Log
           <FieldError>{state?.errors?.password} </FieldError>
         </Field>
       </div>
+
+      <div className="space-y-2">
+        <FieldGroup className="gap-3">
+          <Field orientation="horizontal">
+            <Checkbox id="remember-me" />
+            <FieldLabel
+              htmlFor="remember-me"
+              defaultChecked
+            >
+              Remember me
+            </FieldLabel>
+          </Field>
+          </FieldGroup>
+      </div>
       <FieldError>{state?.message} </FieldError>
-      <button
+      <Button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-md transition-all duration-300 hover:bg-accentBlueHover disabled:opacity-50"
+        variant="primary"
+        className="w-full"
       >
-        {pending ? "Signing in..." : "Sign In"}
-      </button>
+        {pending ? <MdSync className="animate-spin" /> : "Sign In"}
+      </Button>
     </form>
   )
 }

@@ -59,6 +59,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           buttonVariants({ variant, size }),
           className,
           styleOverrideClassName,
+          'cursor-pointer'
           // 'px-5'
         )}
         ref={ref}
