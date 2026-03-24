@@ -1,6 +1,7 @@
 import * as z from "zod"
 
 export const LoginFormSchema = z.object({
+  rememberMe: z.boolean().optional(),
   email: z.email({ error: "Please enter a valid email." }).trim(),
   password: z
     .string()
@@ -13,6 +14,7 @@ export type LoginFormState =
       errors?: {
         email?: string[]
         password?: string[]
+        rememberMe?: boolean
       }
       message?: string
     }

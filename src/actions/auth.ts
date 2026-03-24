@@ -12,6 +12,7 @@ export async function login(
   const validatedFields = LoginFormSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
+    rememberMe: formData.get("rememberMe"),
   })
 
   if (!validatedFields.success) {
@@ -21,7 +22,7 @@ export async function login(
   }
 
   // 2. Proxy to backend auth microservice
-  const { email, password } = validatedFields.data
+  const { email, password, rememberMe } = validatedFields.data
 
   try {
     const response = await fetch(
