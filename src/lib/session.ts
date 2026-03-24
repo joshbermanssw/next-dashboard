@@ -3,18 +3,20 @@ import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
 import type { SessionPayload } from "@/lib/definitions"
 
-const secretKey = process.env.SESSION_SECRET
-if (!secretKey) {
-  throw new Error("SESSION_SECRET environment variable is required")
+function getEncodedKey() {
+  const secretKey = process.env.SESSION_SECRET
+  if (!secretKey) {
+    throw new Error("SESSION_SECRET environment variable is required")
+  }
+  return new TextEncoder().encode(secretKey)
 }
-const encodedKey = new TextEncoder().encode(secretKey)
 
 export async function encrypt(payload: SessionPayload): Promise<string> {
   return new SignJWT({ ...payload, expiresAt: payload.expiresAt.toISOString() })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(encodedKey)
+    .sign(getEncodedKey())
 }
 
 export async function decrypt(
@@ -22,7 +24,7 @@ export async function decrypt(
 ): Promise<SessionPayload | null> {
   if (!session) return null
   try {
-    const { payload } = await jwtVerify(session, encodedKey, {
+    const { payload } = await jwtVerify(session, getEncodedKey(), {
       algorithms: ["HS256"],
     })
     if (
