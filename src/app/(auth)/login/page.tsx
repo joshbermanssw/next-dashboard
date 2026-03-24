@@ -79,6 +79,7 @@ export default function LoginPage() {
         <HeadingTag level={4} className="text-center">Welcome Back</HeadingTag>
         <p className="text-base text-blueLight"> Secure login to access your digital assets</p>
         <LoginForm formAction={formAction} state={state} pending={pending} />
+        <span className="flex flex-row items-center justify-center gap-2 pt-8 text-sm text-blueLightest"> Don't have an account? <Button variant="ghost" className="text-accentBlue  hover:text-accentBlue">Create an account</Button></span>
       </div>
     </Container>
   )
