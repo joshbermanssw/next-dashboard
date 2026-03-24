@@ -14,7 +14,7 @@ export type LoginFormState =
       errors?: {
         email?: string[]
         password?: string[]
-        rememberMe?: boolean
+        rememberMe?: string[]
       }
       message?: string
     }
