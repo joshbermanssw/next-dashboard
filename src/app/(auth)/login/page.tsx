@@ -5,7 +5,7 @@ import { login } from "@/actions/auth"
 import type { LoginFormState } from "@/lib/definitions"
 import Container from "@/components/util/container"
 import HeadingTag from "@/components/util/heading-tag"
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group"
 import { MdLock, MdMail, MdVisibilityOff, MdVisibility, MdSync } from "react-icons/md";
 import { Button } from "@/components/ui/button"
@@ -34,6 +34,7 @@ const LoginForm = ({ formAction, state, pending }: { formAction: any, state: Log
           <InputGroupInput id="password" name="password" type={showPassword ? "text" : "password"} required />
           <InputGroupButton onClick={() => setShowPassword(!showPassword)}>{showPassword ? <MdVisibility /> : <MdVisibilityOff />}</InputGroupButton>
           </InputGroup>
+          <FieldDescription className='flex justify-end'><Button variant="ghost" size='xs' className="text-accentBlue  hover:text-accentBlue">Forgot password?</Button></FieldDescription>
           <FieldError>{state?.errors?.password} </FieldError>
         </Field>
       </div>
@@ -44,6 +45,7 @@ const LoginForm = ({ formAction, state, pending }: { formAction: any, state: Log
             <Checkbox id="remember-me" />
             <FieldLabel
               htmlFor="remember-me"
+
               defaultChecked
             >
               Remember me
