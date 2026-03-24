@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 const LoginForm = ({ formAction, state, pending }: { formAction: any, state: LoginFormState, pending: boolean }) => {
   const [showPassword, setShowPassword] = useState(false)
   return (
-    <form action={formAction} className="space-y-8 pt-8">
+    <form action={formAction} className=" py-8">
       <div className="space-y-2">
         <Field>
           <FieldLabel htmlFor="email" aria-required="true" className="text-sm font-medium text-blueLight">Email Address</FieldLabel>
@@ -26,7 +26,7 @@ const LoginForm = ({ formAction, state, pending }: { formAction: any, state: Log
         </Field>
     </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 pt-4">
         <Field>
           <FieldLabel htmlFor="password" aria-required="true" className="text-sm font-medium text-blueLight">Password</FieldLabel>
           <InputGroup>
@@ -56,7 +56,7 @@ const LoginForm = ({ formAction, state, pending }: { formAction: any, state: Log
         type="submit"
         disabled={pending}
         variant="primary"
-        className="w-full"
+        className="w-full mt-6"
       >
         {pending ? <MdSync className="animate-spin" /> : "Sign In"}
       </Button>

@@ -13,7 +13,7 @@ const buttonVariants = cva(
         secondary: "bg-white/10 text-accentBlue border-white/10",
         darkOutline: "text-blue bg-white border-blue hover:bg-gray-100",
         darkBackground: "bg-blueDark text-accentBlue border-blueDark hover:bg-blueDark/80",
-        ghost:"hover:text-foreground !border-none aria-expanded:bg-muted aria-expanded:text-foreground",
+        ghost:"hover:text-foreground border-transparent aria-expanded:bg-muted aria-expanded:text-foreground",
       },
       size: {
         default: "py-2 px-5",
