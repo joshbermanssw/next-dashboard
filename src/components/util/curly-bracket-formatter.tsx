@@ -11,7 +11,7 @@ export const curlyBracketFormatter = (byLine: React.ReactNode) => {
         return (
           <span
             key={`${index}-${part}`}
-            className="text-[#74BBF2]"
+            className="text-accentBlue"
           >
             {content}
           </span>
