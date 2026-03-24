@@ -35,7 +35,7 @@ export function NavMain({
             <Button
               size="icon"
               className="size-8 group-data-[collapsible=icon]:opacity-0"
-              variant="outline"
+              variant="ghost"
             >
               <MailIcon
               />

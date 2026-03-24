@@ -437,7 +437,7 @@ export function DataTable({
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="outline" size="sm" />}
+              render={<Button variant="ghost" size="sm" />}
             >
               <Columns3Icon data-icon="inline-start" />
               Columns
@@ -467,7 +467,7 @@ export function DataTable({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="sm">
+          <Button variant="ghost" size="sm">
             <PlusIcon
             />
             <span className="hidden lg:inline">Add Section</span>
@@ -571,7 +571,7 @@ export function DataTable({
             </div>
             <div className="ml-auto flex items-center gap-2 lg:ml-0">
               <Button
-                variant="outline"
+                variant="ghost"
                 className="hidden h-8 w-8 p-0 lg:flex"
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}
@@ -581,7 +581,7 @@ export function DataTable({
                 />
               </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 className="size-8"
                 size="icon"
                 onClick={() => table.previousPage()}
@@ -592,7 +592,7 @@ export function DataTable({
                 />
               </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 className="size-8"
                 size="icon"
                 onClick={() => table.nextPage()}
@@ -603,7 +603,7 @@ export function DataTable({
                 />
               </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 className="hidden size-8 lg:flex"
                 size="icon"
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
@@ -681,7 +681,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   const isMobile = useIsMobile()
   return (
     <Drawer direction={isMobile ? "bottom" : "right"}>
-      <DrawerTrigger asChild><Button variant="link" className="w-fit px-0 text-left text-foreground">{item.header}</Button></DrawerTrigger>
+      <DrawerTrigger asChild><Button variant="ghost" className="w-fit px-0 text-left text-foreground">{item.header}</Button></DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.header}</DrawerTitle>
@@ -857,7 +857,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
         </div>
         <DrawerFooter>
           <Button>Submit</Button>
-          <DrawerClose asChild><Button variant="outline">Cancel</Button></DrawerClose>
+          <DrawerClose asChild><Button variant="ghost">Cancel</Button></DrawerClose>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
