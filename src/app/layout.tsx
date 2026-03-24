@@ -9,8 +9,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "DosshPay Dashboard",
-  description: "DosshPay — Banking Without Borders",
+  title: "Dosshpay – Banking Without Borders",
+  description: "Banking Without Borders",
+  icons: {
+    icon: "/logos/dosh/dosh-d.svg",
+  },
 };
 
 export default function RootLayout({
