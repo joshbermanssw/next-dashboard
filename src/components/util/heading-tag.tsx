@@ -33,7 +33,7 @@ export default function HeadingTag({
     'blueDarker': 'text-blueLightest',
   }
 
-  const id = children?.toString()?.toLowerCase()?.replace(/ /g, '-')
+  const id = typeof children === 'string' ? children.toLowerCase().replace(/ /g, '-') : undefined
 
   return (
     <HeadingTag id={id}

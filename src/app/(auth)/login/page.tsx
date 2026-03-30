@@ -94,12 +94,10 @@ export default function LoginPage() {
     login,
     undefined
   )
-
-
   return (
     <Container className='flex flex-col gap-6 items-center justify-center min-h-screen'>
       <div className="text-center space-y-2">
-        <HeadingTag level={1} className="flex items-center">{'{{}  DosshPay  {\\}}'}</HeadingTag>
+        <HeadingTag level={1} className="flex items-center bg-gradient-to-br from-blueLight to-accentBlue bg-clip-text text-transparent">{'DosshPay'}</HeadingTag>
       </div>
       <div className="rounded-lg bg-blueDarkest px-20 py-14 shadow-xl border border-surfaceCardDark">
         <HeadingTag level={4} className="text-center">Welcome Back</HeadingTag>
