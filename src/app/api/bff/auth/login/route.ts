@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validatedFields.data),
+        body: JSON.stringify({ identifier: validatedFields.data.email, password: validatedFields.data.password }),
       }
     )
 

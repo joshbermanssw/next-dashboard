@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useState, useRef } from "react"
+import { useActionState, useState, useRef, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { login } from "@/actions/auth"
@@ -19,6 +19,7 @@ type LoginFormValues = z.infer<typeof LoginFormSchema>
 
 const LoginForm = ({ formAction, state, pending }: { formAction: any, state: LoginFormState, pending: boolean }) => {
   const [showPassword, setShowPassword] = useState(false)
+  const [, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
   const { register, handleSubmit, formState: { isValid }, setValue, watch } = useForm<LoginFormValues>({
     resolver: zodResolver(LoginFormSchema),
@@ -33,7 +34,7 @@ const LoginForm = ({ formAction, state, pending }: { formAction: any, state: Log
   const onSubmit = () => {
     if (formRef.current) {
       const formData = new FormData(formRef.current)
-      formAction(formData)
+      startTransition(() => formAction(formData))
     }
   }
 

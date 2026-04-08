@@ -30,7 +30,7 @@ export async function login(
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier: email, password }),
       }
     )
 
@@ -41,12 +41,10 @@ export async function login(
     const data = await response.json()
 
     // 3. Create session cookie
-    await createSession(data.userId, data.role)
+    const { customer } = data.data
+    await createSession(customer.id, "customer")
   } catch {
-    // Stubbed: if backend is unavailable, create a dev session
-    // TODO: Remove this block when backend is available
-    console.warn("[auth] Backend unavailable — creating dev session")
-    await createSession("dev-user-id", "user")
+    return { message: "Unable to connect to authentication service." }
   }
 
   // 4. Redirect to dashboard
