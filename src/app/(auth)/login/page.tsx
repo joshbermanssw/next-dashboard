@@ -13,6 +13,7 @@ import { MdLock, MdMail, MdVisibilityOff, MdVisibility, MdSync } from "react-ico
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import type * as z from "zod"
+import Image from "next/image"
 
 type LoginFormValues = z.infer<typeof LoginFormSchema>
 
@@ -89,6 +90,19 @@ const LoginForm = ({ formAction, state, pending }: { formAction: any, state: Log
   )
 }
 
+const FloatingLogo = () => {
+  return (
+    <div className="fixed flex-col gap-2 top-6 left-6">
+      <div className='flex items-center gap-2'>
+      <Image src="/logos/dosh/dosh-d-white.svg" alt="DosshPay Logo" width={20} height={20} className='text-white'/>
+      <HeadingTag level={6} className="text-center font-semibold perspective-distant">Welcome to DosshPay</HeadingTag>
+      </div>
+      <p> Do more with your adaptable DigiWallet</p>
+      
+    </div>
+  )
+}
+
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState<LoginFormState, FormData>(
     login,
@@ -96,9 +110,7 @@ export default function LoginPage() {
   )
   return (
     <Container className='flex flex-col gap-6 items-center justify-center min-h-screen'>
-      <div className="text-center space-y-2 animate-fade-in-up" style={{ "--fade-delay": "1.8s" } as React.CSSProperties}>
-        <HeadingTag level={1} className="flex items-center bg-linear-to-br from-blueLight to-accentBlue bg-clip-text text-transparent">{'DosshPay'}</HeadingTag>
-      </div>
+      <FloatingLogo />
       <div className="rounded-lg bg-blueDarkest px-20 py-14 shadow-xl border border-surfaceCardDark animate-fade-in-up" style={{ "--fade-delay": "2.1s" } as React.CSSProperties}>
         <HeadingTag level={4} className="text-center font-semibold perspective-distant">Welcome Back</HeadingTag>
         <p className="text-base text-blueLight"> Secure login to access your digital assets</p>
