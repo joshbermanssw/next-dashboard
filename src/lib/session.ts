@@ -1,7 +1,7 @@
 import "server-only"
 import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
-import type { SessionPayload } from "@/lib/definitions"
+import type { SessionPayload, Customer } from "@/lib/definitions"
 
 function getEncodedKey() {
   const secretKey = process.env.SESSION_SECRET
@@ -29,14 +29,18 @@ export async function decrypt(
     })
     if (
       typeof payload.userId !== "string" ||
-      typeof payload.role !== "string" ||
-      typeof payload.expiresAt !== "string"
+      typeof payload.accessToken !== "string" ||
+      typeof payload.refreshToken !== "string" ||
+      typeof payload.expiresAt !== "string" ||
+      !payload.customer
     ) {
       return null
     }
     return {
       userId: payload.userId,
-      role: payload.role,
+      accessToken: payload.accessToken,
+      refreshToken: payload.refreshToken,
+      customer: payload.customer as Customer,
       expiresAt: new Date(payload.expiresAt),
     }
   } catch {
@@ -45,11 +49,18 @@ export async function decrypt(
 }
 
 export async function createSession(
-  userId: string,
-  role: string
+  customer: Customer,
+  accessToken: string,
+  refreshToken: string
 ): Promise<void> {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  const session = await encrypt({ userId, role, expiresAt })
+  const session = await encrypt({
+    userId: customer.id,
+    accessToken,
+    refreshToken,
+    customer,
+    expiresAt,
+  })
   const cookieStore = await cookies()
 
   cookieStore.set("session", session, {

@@ -13,14 +13,14 @@ export const verifySession = cache(async () => {
     redirect("/login")
   }
 
-  return { isAuth: true as const, userId: session.userId, role: session.role }
+  return {
+    isAuth: true as const,
+    userId: session.userId,
+    customer: session.customer,
+    accessToken: session.accessToken,
+  }
 })
 
-/**
- * Non-redirecting version for use in Route Handlers where redirect()
- * would be caught by try/catch (redirect throws NEXT_REDIRECT).
- * Returns null instead of redirecting on invalid session.
- */
 export const getSession = cache(async () => {
   const cookieStore = await cookies()
   const cookie = cookieStore.get("session")?.value
@@ -30,5 +30,9 @@ export const getSession = cache(async () => {
     return null
   }
 
-  return { userId: session.userId, role: session.role }
+  return {
+    userId: session.userId,
+    customer: session.customer,
+    accessToken: session.accessToken,
+  }
 })

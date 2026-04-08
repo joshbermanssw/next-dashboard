@@ -8,11 +8,10 @@ export async function login(
   _prevState: LoginFormState,
   formData: FormData
 ): Promise<LoginFormState> {
-  // 1. Validate input
   const validatedFields = LoginFormSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
-    rememberMe: formData.get("rememberMe"),
+    rememberMe: formData.get("rememberMe") === "on" || formData.get("rememberMe") === "true",
   })
 
   if (!validatedFields.success) {
@@ -21,8 +20,7 @@ export async function login(
     }
   }
 
-  // 2. Proxy to backend auth microservice
-  const { email, password, rememberMe } = validatedFields.data
+  const { email, password } = validatedFields.data
 
   try {
     const response = await fetch(
@@ -39,15 +37,13 @@ export async function login(
     }
 
     const data = await response.json()
+    const { customer, accessToken, refreshToken } = data.data
 
-    // 3. Create session cookie
-    const { customer } = data.data
-    await createSession(customer.id, "customer")
+    await createSession(customer, accessToken, refreshToken)
   } catch {
     return { message: "Unable to connect to authentication service." }
   }
 
-  // 4. Redirect to dashboard
   redirect("/")
 }
 

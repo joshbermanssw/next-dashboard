@@ -1,7 +1,7 @@
 import * as z from "zod"
 
 export const LoginFormSchema = z.object({
-  rememberMe: z.preprocess((val) => val === "on" || val === true, z.boolean()).optional(),
+  rememberMe: z.boolean().optional(),
   email: z.email({ error: "Please enter a valid email." }).trim(),
   password: z
     .string()
@@ -20,8 +20,19 @@ export type LoginFormState =
     }
   | undefined
 
+export type Customer = {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  phone: string
+  isActive: boolean
+}
+
 export type SessionPayload = {
   userId: string
-  role: string
+  accessToken: string
+  refreshToken: string
+  customer: Customer
   expiresAt: Date
 }

@@ -33,7 +33,8 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json()
-    await createSession(data.userId, data.role)
+    const { customer, accessToken, refreshToken } = data.data
+    await createSession(customer, accessToken, refreshToken)
 
     return NextResponse.json({ success: true, payload: null })
   } catch {
