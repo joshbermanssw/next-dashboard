@@ -15,6 +15,7 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --background-image-sidebar-gradient: var(--sidebar-gradient);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -101,6 +102,9 @@
   --chart-5: #56CADB;
   --radius: 0.625rem;
   --sidebar: #00032E;
+  --sidebar-start: #081033;
+  --sidebar-end: #080B27;
+  --sidebar-gradient: linear-gradient(to bottom, var(--sidebar-start), var(--sidebar-end));
   --sidebar-foreground: #E2E6FF;
   --sidebar-primary: #74BBF2;
   --sidebar-primary-foreground: #2A355A;

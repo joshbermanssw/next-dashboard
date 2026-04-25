@@ -21,7 +21,7 @@ export default async function DashboardLayout({
           } as React.CSSProperties
         }
       >
-        <AppSidebar variant="inset" />
+        <AppSidebar variant="floating" collapsible="icon" />
         <SidebarInset>
           <SiteHeader />
           <div className="flex flex-1 flex-col">
