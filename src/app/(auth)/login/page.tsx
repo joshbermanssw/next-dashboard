@@ -99,7 +99,6 @@ const FloatingLogo = () => {
       <HeadingTag level={6} className="text-center font-semibold perspective-distant">Welcome to DosshPay</HeadingTag>
       </div>
       <p> Do more with your adaptable DigiWallet</p>
-      
     </div>
   )
 }
@@ -112,7 +111,7 @@ export default function LoginPage() {
   return (
     <Container className='flex flex-col gap-6 items-center justify-center min-h-screen'>
       <FloatingLogo />
-      <div className="rounded-lg bg-blueDarkest px-20 py-14 shadow-xl border border-surfaceCardDark animate-fade-in-up" style={{ "--fade-delay": "2.1s" } as React.CSSProperties}>
+      <div className="flex flex-col gap-6 rounded-lg bg-blueDarkest px-20 py-14 shadow-xl border border-surfaceCardDark animate-fade-in-up" style={{ "--fade-delay": "2.1s" } as React.CSSProperties}>
         <HeadingTag level={4} className="text-center font-semibold perspective-distant">Welcome Back</HeadingTag>
         <p className="text-base text-blueLight"> Secure login to access your digital assets</p>
         <LoginForm formAction={formAction} state={state} pending={pending} />
