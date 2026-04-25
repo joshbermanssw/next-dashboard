@@ -16,6 +16,7 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
   --background-image-sidebar-gradient: var(--sidebar-gradient);
+  --background-image-background-gradient: var(--background-gradient);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -78,6 +79,10 @@
 :root {
   /* DosshPay dark-first theme */
   /* --background: var(--color-blueDarker); */
+  --background-start: #061134;
+  --background-middle: #080B27;
+  --background-end: #080B27;
+  --background-gradient: radial-gradient(circle at center, var(--background-start), var(--background-middle), var(--background-end));
   --foreground: #F5F7FF;
   --card: #E8E8E8;
   --card-foreground: #111C3A;
@@ -119,7 +124,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background-gradient text-foreground;
   }
   html {
     @apply font-sans;
