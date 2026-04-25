@@ -30,13 +30,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
-              render={<a href="/" />}
+            <div
+              className="flex flex-col justify-center gap-2 p-1.5"
             >
+              <div className="flex items-center gap-2">
               <Image src="/logos/dosh/dosh-d-white.svg" alt="DosshPay" width={24} height={24} />
-              <span className="text-base font-semibold">DOSSHPAY</span>
-            </SidebarMenuButton>
+              <span className= "text-xl font-semibold">DOSSHPAY</span>
+              </div>
+              <span className="text-xs text-blueLight">Your Banking, Your Way</span>
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
