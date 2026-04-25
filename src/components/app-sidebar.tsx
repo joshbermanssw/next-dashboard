@@ -34,10 +34,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="flex flex-col justify-center gap-2 p-1.5"
             >
               <div className="flex items-center gap-2">
-              <Image src="/logos/dosh/dosh-d-white.svg" alt="DosshPay" width={24} height={24} />
-              <span className= "text-xl font-semibold">DOSSHPAY</span>
+              <Image src="/logos/dosh/dosh-d-white.svg" alt="DosshPay" width={24} height={24}  />
+              <span className= "text-xl font-semibold group-data-[collapsible=icon]:hidden">DOSSHPAY</span>
               </div>
-              <span className="text-xs text-blueLight">Your Banking, Your Way</span>
+              <span className="text-xs font-semibold text-blueLight group-data-[collapsible=icon]:hidden">Your Banking, Your Way</span>
             </div>
           </SidebarMenuItem>
         </SidebarMenu>
