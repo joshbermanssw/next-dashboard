@@ -1,15 +1,27 @@
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { UserProvider } from "@/contexts/user-context"
-import { verifySession } from "@/lib/dal"
+import { meQueryOptions } from "@/queries/user"
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const { customer } = await verifySession()
+export const Route = createFileRoute("/_dashboard")({
+  beforeLoad: async ({ context, location }) => {
+    const me = await context.queryClient.ensureQueryData(meQueryOptions)
+    if (!me) {
+      throw redirect({
+        to: "/login",
+        search: { redirect: location.href },
+      })
+    }
+  },
+  component: DashboardLayout,
+})
+
+function DashboardLayout() {
+  const { data: customer } = useSuspenseQuery(meQueryOptions)
+  if (!customer) return null
 
   return (
     <UserProvider customer={customer}>
@@ -21,12 +33,12 @@ export default async function DashboardLayout({
           } as React.CSSProperties
         }
       >
-        <AppSidebar variant="floating" collapsible="icon" />
+        <AppSidebar variant="sidebar" collapsible="icon" />
         <SidebarInset>
           <SiteHeader />
           <div className="flex flex-1 flex-col">
             <div className="@container/main flex flex-1 flex-col gap-2">
-              {children}
+              <Outlet />
             </div>
           </div>
         </SidebarInset>

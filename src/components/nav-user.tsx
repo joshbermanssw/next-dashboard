@@ -1,11 +1,8 @@
-"use client"
-
+import { useNavigate } from "@tanstack/react-router"
+import { useQueryClient } from "@tanstack/react-query"
 import { useUser } from "@/contexts/user-context"
-import { logout } from "@/actions/auth"
-import {
-  Avatar,
-  AvatarFallback,
-} from "@/components/ui/avatar"
+import { logout as logoutRequest } from "@/api/auth"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +23,19 @@ import { EllipsisVerticalIcon, CircleUserRoundIcon, LogOutIcon } from "lucide-re
 export function NavUser() {
   const { customer } = useUser()
   const { isMobile } = useSidebar()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const initials = `${customer.firstName[0]}${customer.lastName[0]}`
+
+  const handleLogout = async () => {
+    try {
+      await logoutRequest()
+    } catch {
+      /* even on error, clear local state and redirect */
+    }
+    queryClient.setQueryData(["me"], null)
+    navigate({ to: "/login" })
+  }
 
   return (
     <SidebarMenu>
@@ -77,7 +86,7 @@ export function NavUser() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => logout()}>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOutIcon />
               Log out
             </DropdownMenuItem>

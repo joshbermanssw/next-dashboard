@@ -1,7 +1,4 @@
-"use client"
-
-import Image from "next/image"
-import { usePathname } from "next/navigation"
+import { useLocation, Link } from "@tanstack/react-router"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -23,21 +20,21 @@ const navItems = [
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const pathname = usePathname()
+  const { pathname } = useLocation()
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <div
-              className="flex flex-col justify-center gap-2 p-1.5"
-            >
+            <div className="flex flex-col justify-center gap-2 p-1.5">
               <div className="flex items-center gap-2">
-              <Image src="/logos/dosh/dosh-d-white.svg" alt="DosshPay" width={24} height={24}  />
-              <span className= "text-xl font-semibold group-data-[collapsible=icon]:hidden">DOSSHPAY</span>
+                <img src="/logos/dosh/dosh-d-white.svg" alt="DosshPay" width={24} height={24} />
+                <span className="text-xl font-semibold group-data-[collapsible=icon]:hidden">DOSSHPAY</span>
               </div>
-              <span className="text-xs font-semibold text-blueLight group-data-[collapsible=icon]:hidden">Your Banking, Your Way</span>
+              <span className="text-xs font-semibold text-blueLight group-data-[collapsible=icon]:hidden">
+                Your Banking, Your Way
+              </span>
             </div>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -48,7 +45,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 isActive={pathname === item.url}
-                render={<a href={item.url} />}
+                render={<Link to={item.url} />}
               >
                 <item.icon className="size-4" />
                 <span>{item.title}</span>
