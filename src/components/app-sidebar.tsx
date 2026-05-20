@@ -1,5 +1,4 @@
 import { useLocation, Link } from "@tanstack/react-router"
-import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
@@ -9,15 +8,24 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { HomeIcon, WalletIcon, CreditCardIcon, ArrowLeftRightIcon, ShoppingCartIcon } from "lucide-react"
+import {
+  HomeIcon,
+  ChartColumnIcon,
+  SearchIcon,
+  TrendingUpIcon,
+  ReceiptIcon,
+  SettingsIcon,
+} from "lucide-react"
 
 const navItems = [
   { title: "Home", url: "/", icon: HomeIcon },
-  { title: "Accounts", url: "/accounts", icon: WalletIcon },
-  { title: "Cards", url: "/cards", icon: CreditCardIcon },
-  { title: "Payments", url: "/payments", icon: ArrowLeftRightIcon },
-  { title: "Shopback", url: "/shopback", icon: ShoppingCartIcon },
+  { title: "Budget Planner", url: "/budget-planner", icon: ChartColumnIcon },
+  { title: "Dossher", url: "/dossher", icon: SearchIcon },
+  { title: "Investment Tracker", url: "/investment-tracker", icon: TrendingUpIcon },
+  { title: "Expense Manager", url: "/expense-manager", icon: ReceiptIcon },
 ]
+
+const settingsItem = { title: "Settings", url: "/settings", icon: SettingsIcon }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { pathname } = useLocation()
@@ -55,7 +63,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={pathname === settingsItem.url}
+              render={<Link to={settingsItem.url} />}
+            >
+              <settingsItem.icon className="size-4" />
+              <span>{settingsItem.title}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   )
