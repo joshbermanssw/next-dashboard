@@ -32,7 +32,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className='p-6'>
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex flex-col justify-center gap-2 p-1.5">
@@ -47,8 +47,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarMenu className="gap-1 px-2 pt-4">
+      <SidebarContent className='px-6'>
+        <SidebarMenu className="gap-4 pt-4">
           {navItems.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
