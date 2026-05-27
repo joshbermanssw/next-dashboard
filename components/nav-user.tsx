@@ -1,7 +1,8 @@
-import { useNavigate } from "@tanstack/react-router"
-import { useQueryClient } from "@tanstack/react-query"
+"use client"
+
+import { useTransition } from "react"
+import { logoutAction } from "@/app/actions/auth"
 import { useUser } from "@/contexts/user-context"
-import { logout as logoutRequest } from "@/api/auth"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -16,18 +17,13 @@ import { ChevronDownIcon, CircleUserRoundIcon, LogOutIcon } from "lucide-react"
 
 export function NavUser() {
   const { customer } = useUser()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const [pending, startTransition] = useTransition()
   const initials = `${customer.firstName[0]}${customer.lastName[0]}`
 
-  const handleLogout = async () => {
-    try {
-      await logoutRequest()
-    } catch {
-      /* even on error, clear local state and redirect */
-    }
-    queryClient.setQueryData(["me"], null)
-    navigate({ to: "/login" })
+  const handleLogout = () => {
+    startTransition(async () => {
+      await logoutAction()
+    })
   }
 
   return (
@@ -79,7 +75,7 @@ export function NavUser() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>
+        <DropdownMenuItem onClick={handleLogout} disabled={pending}>
           <LogOutIcon />
           Log out
         </DropdownMenuItem>

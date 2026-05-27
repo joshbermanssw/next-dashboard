@@ -1,4 +1,7 @@
-import { useLocation, Link } from "@tanstack/react-router"
+"use client"
+
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import {
   Sidebar,
   SidebarContent,
@@ -28,11 +31,11 @@ const navItems = [
 const settingsItem = { title: "Settings", url: "/settings", icon: SettingsIcon }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { pathname } = useLocation()
+  const pathname = usePathname()
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader className='p-6'>
+      <SidebarHeader className="p-6">
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex flex-col justify-center gap-2 p-1.5">
@@ -47,13 +50,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent className='px-6'>
+      <SidebarContent className="px-6">
         <SidebarMenu className="gap-4 pt-4">
           {navItems.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 isActive={pathname === item.url}
-                render={<Link to={item.url} />}
+                render={<Link href={item.url} />}
               >
                 <item.icon className="size-4" />
                 <span>{item.title}</span>
@@ -67,7 +70,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               isActive={pathname === settingsItem.url}
-              render={<Link to={settingsItem.url} />}
+              render={<Link href={settingsItem.url} />}
             >
               <settingsItem.icon className="size-4" />
               <span>{settingsItem.title}</span>
