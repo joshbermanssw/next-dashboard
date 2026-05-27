@@ -181,7 +181,7 @@ export default function LoginPage() {
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center">
       <div
         className="flex flex-col gap-7 rounded-xl border border-surfaceCardDark bg-blueDarkest px-8 py-10 shadow-2xl animate-fade-in-up sm:px-10 sm:py-12"
-        style={{ "--fade-delay": "2.1s" } as React.CSSProperties}
+        style={{ "--fade-delay": "0.2s" } as React.CSSProperties}
       >
         <header className="space-y-2 text-center">
           <HeadingTag
