@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { useActionState, useState, useRef, useTransition } from "react"
+import { useActionState, useState, useRef, useTransition, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { QRCodeSVG } from "qrcode.react"
 import { loginAction } from "@/app/actions/auth"
 import { LoginFormSchema, type LoginFormState } from "@/lib/definitions"
 import HeadingTag from "@/components/util/heading-tag"
@@ -24,7 +25,9 @@ import {
   MdVisibility,
   MdVisibilityOff,
   MdSync,
+  MdClose,
 } from "react-icons/md"
+import { FaApple, FaGooglePlay } from "react-icons/fa"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import type * as z from "zod"
@@ -170,6 +173,9 @@ export default function LoginPage() {
     loginAction,
     undefined,
   )
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const openSignup = () => dialogRef.current?.showModal()
+  const closeSignup = () => dialogRef.current?.close()
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center">
@@ -193,14 +199,135 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-blueLightest">
           Don&apos;t have an account?{" "}
-          <Link
-            href="/signup"
-            className="font-medium text-accentBlue hover:text-accentBlueHover"
+          <button
+            type="button"
+            onClick={openSignup}
+            className="font-medium text-accentBlue hover:text-accentBlueHover cursor-pointer"
           >
             Create an account
-          </Link>
+          </button>
         </p>
       </div>
+
+      <SignupDialog ref={dialogRef} onClose={closeSignup} />
     </div>
+  )
+}
+
+const DOWNLOAD_URL = "https://dosh-hub.vercel.app/download"
+const APP_STORE_URL = "https://apps.apple.com/app/dosshpay"
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.dosshpay"
+
+function SignupDialog({
+  ref,
+  onClose,
+}: {
+  ref: React.RefObject<HTMLDialogElement | null>
+  onClose: () => void
+}) {
+  // Click-outside-to-close on the native dialog backdrop.
+  useEffect(() => {
+    const dialog = ref.current
+    if (!dialog) return
+    const handleClick = (e: MouseEvent) => {
+      if (e.target === dialog) onClose()
+    }
+    dialog.addEventListener("click", handleClick)
+    return () => dialog.removeEventListener("click", handleClick)
+  }, [ref, onClose])
+
+  return (
+    <dialog
+      ref={ref}
+      onClose={onClose}
+      className="m-auto w-full max-w-sm rounded-2xl border border-surfaceCardDark bg-blueDarkest p-0 text-blueLightest shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm open:animate-fade-in-up"
+    >
+      <div className="relative flex flex-col gap-6 px-8 py-10">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-4 top-4 inline-flex size-8 items-center justify-center rounded-full text-blueLight transition-colors hover:bg-white/10 hover:text-blueLightest cursor-pointer"
+        >
+          <MdClose className="size-5" />
+        </button>
+
+        <header className="space-y-2 text-center">
+          <HeadingTag level={5} className="font-semibold perspective-distant">
+            Sign up in the app
+          </HeadingTag>
+          <p className="text-sm text-blueLight">
+            DosshPay accounts are created on mobile. Scan the QR code or grab
+            the app from your store.
+          </p>
+        </header>
+
+        <div className="mx-auto rounded-xl bg-blueLightest p-4 shadow-inner">
+          <QRCodeSVG
+            value={DOWNLOAD_URL}
+            size={176}
+            level="M"
+            bgColor="#F5F7FF"
+            fgColor="#00032E"
+            marginSize={0}
+          />
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <StoreButton
+            href={APP_STORE_URL}
+            icon={<FaApple className="size-5" />}
+            label="Download on the"
+            store="App Store"
+          />
+          <StoreButton
+            href={PLAY_STORE_URL}
+            icon={<FaGooglePlay className="size-[1.05rem]" />}
+            label="Get it on"
+            store="Google Play"
+          />
+        </div>
+
+        <p className="text-center text-xs text-blueLight/70">
+          Already signed up?{" "}
+          <button
+            type="button"
+            onClick={onClose}
+            className="font-medium text-accentBlue hover:text-accentBlueHover cursor-pointer"
+          >
+            Sign in instead
+          </button>
+        </p>
+      </div>
+    </dialog>
+  )
+}
+
+function StoreButton({
+  href,
+  icon,
+  label,
+  store,
+}: {
+  href: string
+  icon: React.ReactNode
+  label: string
+  store: string
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer noopener"
+      className="flex flex-1 items-center justify-center gap-3 rounded-lg border border-white/15 bg-black/40 px-4 py-2.5 text-blueLightest transition-colors hover:border-accentBlue/50 hover:bg-black/60"
+    >
+      <span className="text-blueLightest">{icon}</span>
+      <span className="flex flex-col items-start leading-tight">
+        <span className="text-[10px] uppercase tracking-wider text-blueLight">
+          {label}
+        </span>
+        <span className="text-sm font-semibold">{store}</span>
+      </span>
+    </a>
   )
 }
