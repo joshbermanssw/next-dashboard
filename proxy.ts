@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 const COOKIE_NAME = "dosshpay_session"
-const publicRoutes = ["/login"]
+const publicRoutes = ["/login", "/forgot-password", "/reset-password", "/signup"]
 
 export function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname
