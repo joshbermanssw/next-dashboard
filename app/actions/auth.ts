@@ -40,9 +40,16 @@ export async function loginAction(
       expiresAt: Date.now() + expiresInSeconds * 1000,
     })
   } catch (err) {
-    if (err instanceof UpstreamError && err.status === 401) {
-      return { message: "Invalid email or password." }
+    // An UpstreamError means we reached the backend and got an HTTP response,
+    // so this is never a connectivity problem. The auth service returns 400
+    // (not 401) for bad credentials, alongside 401.
+    if (err instanceof UpstreamError) {
+      if (err.status === 400 || err.status === 401) {
+        return { message: "Invalid email or password." }
+      }
+      return { message: "Authentication service error. Please try again." }
     }
+    // Network failure, DNS, TLS, or timeout (AbortError) — never reached backend.
     return { message: "Unable to connect to authentication service." }
   }
 
