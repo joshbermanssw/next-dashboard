@@ -30,6 +30,7 @@ import {
 import { FaApple, FaGooglePlay } from "react-icons/fa"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils"
 import type * as z from "zod"
 
 type LoginFormValues = z.infer<typeof LoginFormSchema>
@@ -176,12 +177,21 @@ export default function LoginPage() {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const openSignup = () => dialogRef.current?.showModal()
   const closeSignup = () => dialogRef.current?.close()
+  const firstVisit = useFirstVisitThisSession()
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center">
       <div
-        className="flex flex-col gap-7 rounded-xl border border-surfaceCardDark bg-blueDarkest px-8 py-10 shadow-2xl animate-fade-in-up sm:px-10 sm:py-12"
-        style={{ "--fade-delay": "0.2s" } as React.CSSProperties}
+        suppressHydrationWarning
+        className={cn(
+          "flex flex-col gap-7 rounded-xl border border-surfaceCardDark bg-blueDarkest px-8 py-10 shadow-2xl sm:px-10 sm:py-12",
+          firstVisit && "animate-fade-in-up",
+        )}
+        style={
+          firstVisit
+            ? ({ "--fade-delay": "2.1s" } as React.CSSProperties)
+            : undefined
+        }
       >
         <header className="space-y-2 text-center">
           <HeadingTag
@@ -212,6 +222,25 @@ export default function LoginPage() {
       <SignupDialog ref={dialogRef} onClose={closeSignup} />
     </div>
   )
+}
+
+const VISITED_KEY = "dosh_login_visited"
+
+function useFirstVisitThisSession(): boolean {
+  // Lazy initializer: read sessionStorage synchronously on first client
+  // render. Static prerender returns true (matches the cold-open case
+  // baked into HTML). After client-side navigation back to this page,
+  // the initializer re-runs and returns false.
+  const [first] = useState(() => {
+    if (typeof window === "undefined") return true
+    return sessionStorage.getItem(VISITED_KEY) !== "1"
+  })
+
+  useEffect(() => {
+    if (first) sessionStorage.setItem(VISITED_KEY, "1")
+  }, [first])
+
+  return first
 }
 
 const DOWNLOAD_URL = "https://dosh-hub.vercel.app/download"
