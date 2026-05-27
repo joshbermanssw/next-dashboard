@@ -13,12 +13,9 @@
 # testing
 /coverage
 
-# vite
-/dist/
-/.vite/
-
-# tanstack router (generated)
-src/routeTree.gen.ts
+# next.js
+/.next/
+/out/
 
 # production
 /build
