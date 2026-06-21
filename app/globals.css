@@ -17,6 +17,8 @@
   --color-sidebar: var(--sidebar);
   --background-image-sidebar-gradient: var(--sidebar-gradient);
   --background-image-background-gradient: var(--background-gradient);
+  --background-image-bank-gradient-1: var(--bank-gradient-1);
+  --background-image-bank-gradient-2: var(--bank-gradient-2);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -68,6 +70,16 @@
   --color-surfaceCardSecondary: #D8D8D8;
   --color-surfaceCardTertiary: #E7EBF2;
 
+  /* Dashboard glass panels (dark-on-dark surfaces for charts, lists, tiles) */
+  --color-panel: var(--panel);
+  --color-panel-hover: var(--panel-hover);
+  --color-panel-border: var(--panel-border);
+
+  /* Dashboard semantic accents */
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-label: var(--label);
+
   /* DosshPay body text size tokens */
   --text-large-medium: 1.125rem;
   --text-medium-regular: 1.125rem;
@@ -117,6 +129,20 @@
   --sidebar-accent-foreground: #F5F7FF;
   --sidebar-border: rgba(116, 187, 242, 0.15);
   --sidebar-ring: #74BBF2;
+
+  /* Dashboard glass panels — subtle light film over the dark gradient */
+  --panel: rgba(255, 255, 255, 0.03);
+  --panel-hover: rgba(255, 255, 255, 0.05);
+  --panel-border: rgba(116, 187, 242, 0.12);
+
+  /* Trend + label semantics */
+  --positive: #4ED7A0;
+  --negative: #F87171;
+  --label: #8B95B8;
+
+  /* Bank card gradients (top-right light → bottom-left deep navy) */
+  --bank-gradient-1: linear-gradient(120deg, #1B2A78 0%, #2F6FD0 52%, #5BB3EF 100%);
+  --bank-gradient-2: linear-gradient(120deg, #0A1248 0%, #1B3B86 55%, #2F6FC4 100%);
 }
 
 @layer base {
