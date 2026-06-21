@@ -4,6 +4,9 @@ const COOKIE_NAME = "dosshpay_session"
 const publicRoutes = ["/login", "/forgot-password", "/reset-password", "/signup"]
 
 export function proxy(req: NextRequest) {
+  // Ephemeral dev escape hatch — see DISABLE_AUTH in .env. Remove the env var to re-enable auth.
+  if (process.env.DISABLE_AUTH === "true") return NextResponse.next()
+
   const path = req.nextUrl.pathname
   const isPublic = publicRoutes.includes(path)
   const hasSession = Boolean(req.cookies.get(COOKIE_NAME)?.value)

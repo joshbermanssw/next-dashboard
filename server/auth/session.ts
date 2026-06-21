@@ -14,6 +14,21 @@ export type Session = {
   expiresAt: number
 }
 
+// Ephemeral dev escape hatch — set DISABLE_AUTH=true in .env to bypass auth and
+// run with a mock session. Remove the env var to re-enable real auth.
+const MOCK_SESSION: Session = {
+  customer: {
+    id: "dev-user",
+    email: "dev@dosshpay.local",
+    firstName: "Dev",
+    lastName: "User",
+    phone: "+00000000000",
+    isActive: true,
+  },
+  upstreamJwt: "",
+  expiresAt: 4102444800000, // 2100-01-01
+}
+
 function key(): Uint8Array {
   const secret = process.env.SESSION_SECRET
   if (!secret) throw new Error("Missing SESSION_SECRET")
@@ -56,6 +71,7 @@ export async function clearSessionCookie(): Promise<void> {
 }
 
 export const getSession = cache(async (): Promise<Session | null> => {
+  if (process.env.DISABLE_AUTH === "true") return MOCK_SESSION
   const store = await cookies()
   const token = store.get(COOKIE_NAME)?.value
   const session = await decryptSession(token)
