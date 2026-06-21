@@ -18,11 +18,11 @@ export type Session = {
 // run with a mock session. Remove the env var to re-enable real auth.
 const MOCK_SESSION: Session = {
   customer: {
-    id: "dev-user",
-    email: "dev@dosshpay.local",
-    firstName: "Dev",
-    lastName: "User",
-    phone: "+00000000000",
+    id: "stella-dontoh",
+    email: "stella.dontoh@example.com",
+    firstName: "Stella",
+    lastName: "Dontoh",
+    phone: "+61 412 345 678",
     isActive: true,
   },
   upstreamJwt: "",

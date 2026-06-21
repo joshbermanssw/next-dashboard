@@ -48,9 +48,6 @@ export type Expense = {
   amount: number
 }
 
-export const customerName = "Josh"
-export const accountTier = "Premium Account"
-
 export const totalBalance = 42_000
 
 export const accountTabs: AccountTab[] = [
