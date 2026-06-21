@@ -61,7 +61,7 @@ export function NotificationsMenu() {
                     "flex size-9 shrink-0 items-center justify-center rounded-full",
                     n.tone === "positive"
                       ? "bg-positive/15 text-positive"
-                      : "bg-primary/15 text-primary-foreground"
+                      : "bg-primary/15 text-primary"
                   )}
                 >
                   <n.icon className="size-4" />
@@ -90,7 +90,7 @@ export function NotificationsMenu() {
         <div className="border-t border-foreground/10 p-2">
           <button
             type="button"
-            className="w-full rounded-md py-2 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-foreground/5"
+            className="w-full rounded-md py-2 text-center text-sm font-medium text-primary transition-colors hover:bg-foreground/5"
           >
             View all notifications
           </button>

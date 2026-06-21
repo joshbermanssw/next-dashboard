@@ -98,8 +98,8 @@
   --foreground: #F5F7FF;
   --card: #E8E8E8;
   --card-foreground: #111C3A;
-  --popover: #E8E8E8;
-  --popover-foreground: #111C3A;
+  --popover: #111C3A;
+  --popover-foreground: #F5F7FF;
   --primary: #74BBF2;
   --primary-foreground: #2A355A;
   --secondary: #00032E;
