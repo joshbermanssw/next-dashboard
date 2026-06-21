@@ -30,53 +30,79 @@ const navItems = [
 
 const settingsItem = { title: "Settings", url: "/settings", icon: SettingsIcon }
 
+const menuButtonClass =
+  "h-12 gap-3 rounded-lg px-3 text-[15px] text-sidebar-foreground [&_svg]:size-5 data-active:bg-white/[0.06] data-active:font-medium data-active:text-blueLightest data-active:ring-1 data-active:ring-inset data-active:ring-sidebar-border hover:bg-white/[0.04] hover:text-blueLightest"
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader className="p-6">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <div className="flex flex-col justify-center gap-2 p-1.5">
-              <div className="flex items-center gap-2">
-                <img src="/logos/dosh/dosh-d-white.svg" alt="DosshPay" width={24} height={24} />
-                <span className="text-xl font-semibold group-data-[collapsible=icon]:hidden">DOSSHPAY</span>
-              </div>
-              <span className="text-xs font-semibold text-blueLight group-data-[collapsible=icon]:hidden">
-                Your Banking, Your Way
-              </span>
-            </div>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <Sidebar {...props}>
+      <SidebarHeader className="px-6 pt-6 pb-2">
+        <Link href="/" className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/logos/dosh/dosh-d-white.svg"
+              alt=""
+              width={26}
+              height={26}
+              className="size-6"
+            />
+            <span className="text-xl font-bold tracking-wide text-blueLightest">
+              DOSSHPAY
+            </span>
+          </div>
+          <span className="text-xs font-medium text-label">
+            Your Banking, your way
+          </span>
+        </Link>
       </SidebarHeader>
-      <SidebarContent className="px-6">
-        <SidebarMenu className="gap-4 pt-4">
+
+      <SidebarContent className="px-4 pt-4">
+        <SidebarMenu className="gap-1.5">
           {navItems.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 isActive={pathname === item.url}
+                className={menuButtonClass}
                 render={<Link href={item.url} />}
               >
-                <item.icon className="size-4" />
+                <item.icon />
                 <span>{item.title}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
+
+      <SidebarFooter className="gap-4 px-4 pb-6">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               isActive={pathname === settingsItem.url}
+              className={menuButtonClass}
               render={<Link href={settingsItem.url} />}
             >
-              <settingsItem.icon className="size-4" />
+              <settingsItem.icon />
               <span>{settingsItem.title}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+
+        {/* Chatbot launcher placeholder — bottom-left corner */}
+        <button
+          type="button"
+          aria-label="Open DosshPay assistant"
+          className="flex size-12 items-center justify-center rounded-full bg-white/[0.06] ring-1 ring-sidebar-border transition-colors hover:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <img
+            src="/logos/dosh/dosh-d-white.svg"
+            alt=""
+            width={22}
+            height={22}
+            className="size-5.5"
+          />
+        </button>
       </SidebarFooter>
     </Sidebar>
   )
