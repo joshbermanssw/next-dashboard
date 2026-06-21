@@ -1,6 +1,7 @@
 "use client"
 
 import { useTransition } from "react"
+import Link from "next/link"
 import { logoutAction } from "@/app/actions/auth"
 import { useUser } from "@/contexts/user-context"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -57,10 +58,10 @@ export function NavUser() {
                 <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">
+                <span className="truncate font-medium text-popover-foreground">
                   {customer.firstName} {customer.lastName}
                 </span>
-                <span className="truncate text-xs text-muted-foreground">
+                <span className="truncate text-xs text-popover-foreground/60">
                   {customer.email}
                 </span>
               </div>
@@ -69,7 +70,7 @@ export function NavUser() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem render={<Link href="/settings" />}>
             <CircleUserRoundIcon />
             Account
           </DropdownMenuItem>

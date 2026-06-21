@@ -14,6 +14,9 @@ import {
   FingerprintIcon,
   HeartIcon,
   LogOutIcon,
+  ArrowDownLeftIcon,
+  CreditCardIcon,
+  ShieldCheckIcon,
 } from "lucide-react"
 
 export type UserProfile = {
@@ -153,3 +156,53 @@ export const notificationPrefs: NotificationPref[] = [
 ]
 
 export const appVersion = "1.0.0"
+
+export type Notification = {
+  id: string
+  title: string
+  body: string
+  time: string
+  unread: boolean
+  icon: LucideIcon
+  tone?: "default" | "positive"
+}
+
+export const recentNotifications: Notification[] = [
+  {
+    id: "n1",
+    title: "Payment received",
+    body: "You received $250.00 from Nana K.",
+    time: "2m ago",
+    unread: true,
+    icon: ArrowDownLeftIcon,
+    tone: "positive",
+  },
+  {
+    id: "n2",
+    title: "Card transaction",
+    body: "$28.00 at City Dry Cleaning",
+    time: "1h ago",
+    unread: true,
+    icon: CreditCardIcon,
+  },
+  {
+    id: "n3",
+    title: "New login",
+    body: "Sign in from Sydney, AU on a new device",
+    time: "3h ago",
+    unread: false,
+    icon: ShieldCheckIcon,
+  },
+  {
+    id: "n4",
+    title: "Statement ready",
+    body: "Your November statement is available",
+    time: "2d ago",
+    unread: false,
+    icon: FileTextIcon,
+  },
+]
+
+export const unreadNotificationCount = recentNotifications.filter(
+  (n) => n.unread
+).length
