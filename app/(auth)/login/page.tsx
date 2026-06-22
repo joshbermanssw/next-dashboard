@@ -134,6 +134,7 @@ function LoginForm({
       <Field orientation="horizontal">
         <Checkbox
           id="remember-me"
+          name="rememberMe"
           checked={watch("rememberMe")}
           onCheckedChange={(checked) => setValue("rememberMe", !!checked)}
         />

@@ -10,6 +10,10 @@ import {
   setSessionCookie,
 } from "@/server/auth/session"
 
+// Absolute session cap. The proxy keeps the access token fresh via /auth/refresh
+// up to this deadline; after it, getSession() rejects and the user must re-login.
+const SESSION_MAX_DURATION_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
+
 export async function loginAction(
   _prev: LoginFormState,
   formData: FormData,
@@ -33,11 +37,18 @@ export async function loginAction(
         password: parsed.data.password,
       })
 
+    const rememberMe = parsed.data.rememberMe ?? false
+    const now = Date.now()
+
     await setSessionCookie({
       customer,
       upstreamJwt: accessToken,
       refreshToken,
-      expiresAt: Date.now() + expiresInSeconds * 1000,
+      accessTokenExpiresAt: now + expiresInSeconds * 1000,
+      // Absolute deadline is the same either way; "Keep me signed in" only decides
+      // whether the cookie persists across browser restarts (see sessionCookieOptions).
+      expiresAt: now + SESSION_MAX_DURATION_MS,
+      rememberMe,
     })
   } catch (err) {
     // An UpstreamError means we reached the backend and got an HTTP response,
