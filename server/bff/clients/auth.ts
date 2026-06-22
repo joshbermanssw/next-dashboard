@@ -42,6 +42,40 @@ export async function upstreamLogin(input: {
   return { customer, accessToken, refreshToken, expiresInSeconds: expiresIn }
 }
 
+// Internal shape consumed by the refresh flow.
+type RefreshUpstreamResult = {
+  accessToken: string
+  refreshToken: string
+  expiresInSeconds: number
+}
+
+// Wire shape: same `{ success, data }` envelope as login, but tokens only — no
+// `customer`. The refresh token is single-use and rotated on every call; the new
+// one MUST replace the stored token (reuse → 403).
+type RefreshWireResponse = {
+  success: boolean
+  data: {
+    accessToken: string
+    refreshToken: string
+    expiresIn: number
+    tokenType: string
+  }
+}
+
+export async function upstreamRefresh(
+  refreshToken: string,
+): Promise<RefreshUpstreamResult> {
+  const res = await bffFetch<RefreshWireResponse>(
+    `${services.auth.baseUrl}/auth/refresh`,
+    {
+      method: "POST",
+      body: JSON.stringify({ refreshToken }),
+    },
+  )
+  const { accessToken, refreshToken: rotated, expiresIn } = res.data
+  return { accessToken, refreshToken: rotated, expiresInSeconds: expiresIn }
+}
+
 export async function upstreamLogout(bearer: string): Promise<void> {
   try {
     await bffFetch(`${services.auth.baseUrl}/auth/logout`, {
