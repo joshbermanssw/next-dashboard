@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { UserProvider } from "@/contexts/user-context"
+import { Toaster } from "@/components/ui/sonner"
 import { verifySession } from "@/server/auth/dal"
 
 export default async function DashboardLayout({
@@ -31,6 +32,7 @@ export default async function DashboardLayout({
           </div>
         </SidebarInset>
       </SidebarProvider>
+      <Toaster />
     </UserProvider>
   )
 }
