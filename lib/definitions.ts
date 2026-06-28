@@ -25,3 +25,14 @@ export type Customer = {
   phone: string
   isActive: boolean
 }
+
+const CustomerDataSchema = z.object({
+  accounts: z.object({ id: z.string() }).nullish(),
+})
+
+export function extractAccountId(data: unknown): string | undefined {
+  const parsed = CustomerDataSchema.safeParse(data)
+  if (!parsed.success) return undefined
+  const id = parsed.data.accounts?.id
+  return id && id.length > 0 ? id : undefined
+}
