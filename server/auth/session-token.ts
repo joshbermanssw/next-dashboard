@@ -22,6 +22,9 @@ export type Session = {
   // Cookie persistence: true → survives browser restart ("Keep me signed in");
   // false/absent → session cookie the browser drops on close.
   rememberMe?: boolean
+  // Plan/account id (from GET /customers/{id} → data.accounts.id). Stable per user;
+  // captured at login, preserved across token refreshes.
+  accountId?: string
 }
 
 function key(): Uint8Array {
