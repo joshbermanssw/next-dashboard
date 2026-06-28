@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import Link from "next/link"
 import { verifySession } from "@/server/auth/dal"
 import { getCurrentPlan } from "@/server/bff/clients/plan"
 import { CurrentPlanCard } from "@/components/dashboard/settings/plan/current-plan-card"
@@ -6,11 +7,19 @@ import { PlanFeatures } from "@/components/dashboard/settings/plan/plan-features
 import { Panel } from "@/components/ui/panel"
 import type { CurrentPlan } from "@/lib/plan"
 
-function PlanMessage({ title, body }: { title: string; body: string }) {
+function PlanMessage({ title, body, retry }: { title: string; body: string; retry?: boolean }) {
   return (
     <Panel className="flex flex-col gap-1 p-5">
       <p className="text-base font-medium text-blueLightest">{title}</p>
       <p className="text-sm text-blueLight">{body}</p>
+      {retry ? (
+        <Link
+          href="/settings/plan"
+          className="mt-2 text-sm font-medium text-accentBlue hover:text-accentBlueHover"
+        >
+          Try again
+        </Link>
+      ) : null}
     </Panel>
   )
 }
@@ -40,6 +49,7 @@ export default async function PlanPage() {
         <PlanMessage
           title="Couldn't load your plan"
           body="Something went wrong fetching your plan. Please try again later."
+          retry
         />
       )
     } else if (!plan) {

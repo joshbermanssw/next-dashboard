@@ -55,6 +55,7 @@ export function SettingsMenu() {
                     icon={item.icon}
                     label={item.label}
                     subtitle={item.subtitle}
+                    interactive
                   />
                 </Link>
               )
