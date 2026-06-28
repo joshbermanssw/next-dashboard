@@ -9,6 +9,12 @@ function required(name: string): string {
 export const services = {
   auth: { baseUrl: required("MS_AUTH_BASE_URL") },
   accounts: { baseUrl: process.env.MS_ACCOUNTS_BASE_URL ?? required("MS_AUTH_BASE_URL") },
+  // Assets API hosts the public plan catalogue (GET /plans/{accountType}).
+  assets: {
+    baseUrl: (
+      process.env.MS_ASSETS_BASE_URL ?? "https://assets-api-dev.dossh.me"
+    ).replace(/\/$/, ""),
+  },
 } as const
 
 export type ServiceName = keyof typeof services

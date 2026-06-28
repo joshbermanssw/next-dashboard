@@ -25,6 +25,9 @@ export type Session = {
   // Plan/account id (from GET /customers/{id} → data.accounts.id). Stable per user;
   // captured at login, preserved across token refreshes.
   accountId?: string
+  // Account type (from data.accounts.accountType, normalized). Selects the plan
+  // catalogue (everyday | corporate). Captured at login alongside accountId.
+  accountType?: "everyday" | "corporate"
 }
 
 function key(): Uint8Array {

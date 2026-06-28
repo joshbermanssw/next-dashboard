@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation"
 import { LoginFormSchema, type LoginFormState } from "@/lib/definitions"
 import { upstreamLogin, upstreamLogout } from "@/server/bff/clients/auth"
-import { getCustomerAccountId } from "@/server/bff/clients/customer"
+import { getCustomerAccount } from "@/server/bff/clients/customer"
+import type { AccountType } from "@/lib/definitions"
 import { UpstreamError } from "@/server/bff/http"
 import {
   clearSessionCookie,
@@ -41,13 +42,18 @@ export async function loginAction(
     const rememberMe = parsed.data.rememberMe ?? false
     const now = Date.now()
 
-    // Non-blocking: fetch the plan accountId. If it fails or is missing, login
-    // still succeeds and the plan page handles the absence.
+    // Non-blocking: fetch the plan accountId + accountType. If it fails or is
+    // missing, login still succeeds and the plan page handles the absence.
     let accountId: string | undefined
+    let accountType: AccountType | undefined
     try {
-      accountId = await getCustomerAccountId(accessToken, customer.id)
+      ;({ accountId, accountType } = await getCustomerAccount(
+        accessToken,
+        customer.id,
+      ))
     } catch {
       accountId = undefined
+      accountType = undefined
     }
 
     await setSessionCookie({
@@ -60,6 +66,7 @@ export async function loginAction(
       expiresAt: now + SESSION_MAX_DURATION_MS,
       rememberMe,
       accountId,
+      accountType,
     })
   } catch (err) {
     // An UpstreamError means we reached the backend and got an HTTP response,
