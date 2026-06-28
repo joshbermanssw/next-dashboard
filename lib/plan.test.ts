@@ -49,6 +49,7 @@ describe("extractFeatures", () => {
 
 describe("planRenewalLine", () => {
   const base: CurrentPlan = {
+    subscriptionId: "sub-1", planId: 3,
     planName: "Premium", tier: "PREMIUM", status: "active",
     formattedPrice: "USD 29.99 / monthly", currency: "USD", billingCycle: "monthly",
     renewAt: null, expiresAt: null, trialEndsAt: null, features: [],
@@ -72,6 +73,7 @@ describe("planRenewalLine", () => {
 
 describe("toCurrentPlan", () => {
   const wire = {
+    id: "plan-sub-x",
     planId: 3,
     actualPrice: "29.99",
     currency: "USD",
@@ -88,6 +90,7 @@ describe("toCurrentPlan", () => {
   }
   it("maps a full subscription object", () => {
     expect(toCurrentPlan(wire)).toEqual({
+      subscriptionId: "plan-sub-x", planId: 3,
       planName: "Premium", tier: "PREMIUM", status: "active",
       formattedPrice: "USD 29.99 / monthly", currency: "USD", billingCycle: "monthly",
       renewAt: "2026-08-01T00:00:00Z", expiresAt: null, trialEndsAt: null,

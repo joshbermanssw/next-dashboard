@@ -17,6 +17,7 @@ const PlanDetailsSchema = z.object({
 
 // data returned by GET /account/{accountId}/plan — a single subscription object.
 export const PlanSubscriptionSchema = z.object({
+  id: z.string().nullish(),
   planId: z.number(),
   actualPrice: MoneySchema,
   currency: z.string().optional(),
@@ -29,6 +30,8 @@ export const PlanSubscriptionSchema = z.object({
 })
 
 export type CurrentPlan = {
+  subscriptionId: string | null
+  planId: number
   planName: string
   tier: PlanTier | null
   status: PlanStatus
@@ -101,6 +104,8 @@ export function toCurrentPlan(data: unknown): CurrentPlan {
   const billingCycle = p.billingCycle ?? p.plans.billingCycle ?? ""
   const price = p.actualPrice ?? p.plans.basePrice ?? null
   return {
+    subscriptionId: p.id ?? null,
+    planId: p.planId,
     planName: p.plans.name,
     tier: asTier(p.plans.planType),
     status: asStatus(p.status),
@@ -111,5 +116,85 @@ export function toCurrentPlan(data: unknown): CurrentPlan {
     expiresAt: p.expiresAt ?? null,
     trialEndsAt: p.trialEndsAt ?? null,
     features: extractFeatures(p.plans.features),
+  }
+}
+
+// ── Plan catalogue (GET {assets}/plans/{accountType} → payload: PlanDto[]) ──
+
+// PlanDto exposes a monthly price only, in cents, and no currency.
+const PlanDtoSchema = z.object({
+  ID: z.number(),
+  plan_name: z.string(),
+  month_cost: z.number(),
+  features: z.array(z.string()).optional().default([]),
+  learn_more_slug: z.string().optional().default(""),
+})
+
+export type CatalogPlan = {
+  id: number
+  name: string
+  tier: PlanTier | null
+  monthlyPriceMinor: number
+  formattedPrice: string
+  features: string[]
+  learnMoreSlug: string
+}
+
+// Catalogue carries no currency, so the price is shown symbol-free (or "Free").
+export function formatCatalogPrice(monthCostMinor: number): string {
+  if (!Number.isFinite(monthCostMinor) || monthCostMinor <= 0) return "Free"
+  return `${(monthCostMinor / 100).toFixed(2)} / month`
+}
+
+export function toCatalogPlan(dto: unknown): CatalogPlan {
+  const d = PlanDtoSchema.parse(dto)
+  return {
+    id: d.ID,
+    name: d.plan_name,
+    tier: asTier(d.plan_name.toUpperCase()),
+    monthlyPriceMinor: d.month_cost,
+    formattedPrice: formatCatalogPrice(d.month_cost),
+    features: d.features,
+    learnMoreSlug: d.learn_more_slug,
+  }
+}
+
+// ── Plan history (GET {api}/account/{id}/plan/history → data: subscription[]) ──
+
+const PlanHistorySubSchema = z.object({
+  id: z.string(),
+  status: z.string().nullish(),
+  actualPrice: MoneySchema,
+  currency: z.string().optional(),
+  billingCycle: z.string().optional(),
+  startedAt: z.string().nullish(),
+  expiresAt: z.string().nullish(),
+  cancelledAt: z.string().nullish(),
+  plans: PlanDetailsSchema,
+})
+
+export type PlanHistoryItem = {
+  id: string
+  planName: string
+  tier: PlanTier | null
+  status: PlanStatus
+  formattedPrice: string
+  startedAt: string | null
+  endedAt: string | null
+}
+
+export function toPlanHistoryItem(data: unknown): PlanHistoryItem {
+  const p = PlanHistorySubSchema.parse(data)
+  const currency = p.currency ?? p.plans.currency ?? ""
+  const billingCycle = p.billingCycle ?? p.plans.billingCycle ?? ""
+  const price = p.actualPrice ?? p.plans.basePrice ?? null
+  return {
+    id: p.id,
+    planName: p.plans.name,
+    tier: asTier(p.plans.planType),
+    status: asStatus(p.status),
+    formattedPrice: formatPlanPrice(price, currency, billingCycle),
+    startedAt: p.startedAt ?? null,
+    endedAt: p.cancelledAt ?? p.expiresAt ?? null,
   }
 }
