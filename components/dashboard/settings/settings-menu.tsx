@@ -6,6 +6,7 @@ import { logoutAction } from "@/app/actions/auth"
 import { Panel, PanelTitle } from "@/components/ui/panel"
 import { Switch } from "@/components/ui/switch"
 import { SettingsRow } from "@/components/ui/settings-row"
+import Link from "next/link"
 import { profileMenu } from "@/lib/profile-data"
 
 export function SettingsMenu() {
@@ -47,6 +48,18 @@ export function SettingsMenu() {
               )
             }
 
+            if (item.kind === "nav") {
+              return (
+                <Link key={item.id} href={item.href ?? "#"} className="block">
+                  <SettingsRow
+                    icon={item.icon}
+                    label={item.label}
+                    subtitle={item.subtitle}
+                  />
+                </Link>
+              )
+            }
+
             return (
               <SettingsRow
                 key={item.id}
@@ -54,9 +67,7 @@ export function SettingsMenu() {
                 label={item.label}
                 subtitle={item.subtitle}
                 tone={item.tone}
-                onClick={
-                  item.id === "logout" ? handleLogout : () => {}
-                }
+                onClick={item.id === "logout" ? handleLogout : undefined}
                 trailing={
                   item.id === "logout" && pending ? (
                     <span className="text-xs text-label">Signing out…</span>

@@ -113,6 +113,7 @@ export const profileMenu: ProfileMenuSection[] = [
     id: "profile",
     title: "Profile",
     items: [
+      { id: "plan", label: "Your Plan", icon: CreditCardIcon, kind: "nav", href: "/settings/plan" },
       { id: "personal", label: "Personal details", icon: CircleUserIcon, kind: "nav", href: "#" },
       { id: "statements", label: "Statements", icon: FileTextIcon, kind: "nav", href: "#" },
     ],
