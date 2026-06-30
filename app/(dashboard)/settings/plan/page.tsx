@@ -2,6 +2,8 @@ import Link from "next/link"
 import { verifySession } from "@/server/auth/dal"
 import { getCurrentPlan, getPlanHistory } from "@/server/bff/clients/plan"
 import { getPlanCatalog } from "@/server/bff/clients/plan-catalog"
+import { getCustomerAccount } from "@/server/bff/clients/customer"
+import type { AccountType } from "@/lib/definitions"
 import { CurrentPlanCard } from "@/components/dashboard/settings/plan/current-plan-card"
 import { PlanFeatures } from "@/components/dashboard/settings/plan/plan-features"
 import { CatalogSection } from "@/components/dashboard/settings/plan/catalog-section"
@@ -21,7 +23,22 @@ function PlanMessage({ title, body }: { title: string; body: string }) {
 export default async function PlanPage() {
   const session = await verifySession()
 
-  if (!session.accountId) {
+  // accountId/accountType are captured at login, but sessions created before this
+  // feature shipped won't have them. Resolve on demand so older sessions self-heal
+  // without forcing a re-login.
+  let accountId = session.accountId
+  let accountType: AccountType = session.accountType ?? "everyday"
+  if (!accountId) {
+    try {
+      const acct = await getCustomerAccount(session.upstreamJwt, session.customer.id)
+      accountId = acct.accountId
+      accountType = acct.accountType ?? accountType
+    } catch {
+      // leave accountId undefined → handled below
+    }
+  }
+
+  if (!accountId) {
     return (
       <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
         <h1 className="text-2xl font-semibold text-blueLightest">Your Plan</h1>
@@ -35,16 +52,14 @@ export default async function PlanPage() {
     )
   }
 
-  const accountType = session.accountType ?? "everyday"
-
   // Each fetch is independently guarded so one failing section doesn't break the
   // others. revalidatePath() re-runs all three after a subscribe/cancel.
   const [planResult, catalog, history] = await Promise.all([
-    getCurrentPlan(session.upstreamJwt, session.accountId)
+    getCurrentPlan(session.upstreamJwt, accountId)
       .then((plan) => ({ ok: true as const, plan }))
       .catch(() => ({ ok: false as const, plan: null })),
     getPlanCatalog(accountType).catch(() => []),
-    getPlanHistory(session.upstreamJwt, session.accountId).catch(() => []),
+    getPlanHistory(session.upstreamJwt, accountId).catch(() => []),
   ])
 
   const plan = planResult.ok ? planResult.plan : null
