@@ -33,7 +33,7 @@ export function PlanOptionCard({
   return (
     <Panel
       className={cn(
-        "flex flex-col gap-3 p-5",
+        "flex h-full flex-col gap-3 p-5",
         isCurrent && "ring-1 ring-accentBlue/40",
       )}
     >
@@ -56,7 +56,7 @@ export function PlanOptionCard({
       <Button
         type="button"
         variant={isCurrent ? "secondary" : "primary"}
-        className="mt-1 w-full"
+        className="mt-auto w-full"
         disabled={isCurrent || pending}
         onClick={onSubscribe}
       >
