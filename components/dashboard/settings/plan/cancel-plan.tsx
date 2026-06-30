@@ -47,8 +47,8 @@ export function CancelPlan({ subscriptionId }: { subscriptionId: string }) {
           <DrawerHeader>
             <DrawerTitle className="text-blueLightest">Cancel your plan?</DrawerTitle>
             <DrawerDescription className="text-blueLight">
-              You&apos;ll lose access to your plan&apos;s features. You can resubscribe
-              anytime.
+              You&apos;ll move to the free Basic plan and lose your paid features. You
+              can upgrade again anytime.
             </DrawerDescription>
           </DrawerHeader>
 
