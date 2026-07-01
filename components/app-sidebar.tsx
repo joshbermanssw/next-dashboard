@@ -17,7 +17,6 @@ import {
   SearchIcon,
   TrendingUpIcon,
   ReceiptIcon,
-  SettingsIcon,
 } from "lucide-react"
 
 const navItems = [
@@ -28,7 +27,6 @@ const navItems = [
   { title: "Expense Manager", url: "/expense-manager", icon: ReceiptIcon },
 ]
 
-const settingsItem = { title: "Settings", url: "/settings", icon: SettingsIcon }
 
 const menuButtonClass =
   "h-12 gap-3 rounded-lg px-3 text-[15px] text-sidebar-foreground [&_svg]:size-5 data-active:bg-white/[0.06] data-active:font-medium data-active:text-blueLightest data-active:ring-1 data-active:ring-inset data-active:ring-sidebar-border hover:bg-white/[0.04] hover:text-blueLightest"
@@ -76,19 +74,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       <SidebarFooter className="gap-4 px-4 pb-6">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              isActive={pathname === settingsItem.url}
-              className={menuButtonClass}
-              render={<Link href={settingsItem.url} />}
-            >
-              <settingsItem.icon />
-              <span>{settingsItem.title}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-
         {/* Chatbot launcher placeholder — bottom-left corner */}
         <button
           type="button"
