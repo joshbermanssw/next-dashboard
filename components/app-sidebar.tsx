@@ -18,6 +18,7 @@ import {
   TrendingUpIcon,
   ReceiptIcon,
 } from "lucide-react"
+import { DossherChat } from "@/components/dossher-chat"
 
 const navItems = [
   { title: "Home", url: "/", icon: HomeIcon },
@@ -74,20 +75,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       <SidebarFooter className="gap-4 px-4 pb-6">
-        {/* Chatbot launcher placeholder — bottom-left corner */}
-        <button
-          type="button"
-          aria-label="Open DosshPay assistant"
-          className="flex size-12 items-center justify-center rounded-full bg-white/[0.06] ring-1 ring-sidebar-border transition-colors hover:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <img
-            src="/logos/dosh/dosh-d-white.svg"
-            alt=""
-            width={22}
-            height={22}
-            className="size-5.5"
-          />
-        </button>
+        <DossherChat />
       </SidebarFooter>
     </Sidebar>
   )
