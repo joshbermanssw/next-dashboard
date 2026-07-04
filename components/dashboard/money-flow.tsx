@@ -11,7 +11,8 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { RangeSelector } from "@/components/ui/range-selector"
-import { moneyFlowByRange, type TimeRange } from "@/lib/dashboard-data"
+import { useAccounts } from "@/contexts/accounts-context"
+import type { TimeRange } from "@/lib/dashboard-data"
 import { cn, formatCompact, formatCurrency } from "@/lib/utils"
 
 const chartConfig = {
@@ -19,12 +20,14 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function MoneyFlow() {
+  const { selected } = useAccounts()
   const [range, setRange] = React.useState<TimeRange>("6M")
-  const data = moneyFlowByRange[range]
+  const data = selected.data.moneyFlowByRange[range]
 
   const first = data[0].value
   const last = data[data.length - 1].value
-  const change = ((last - first) / first) * 100
+  // Fresh accounts have a flat $0 series — no trend to report.
+  const change = first === 0 ? 0 : ((last - first) / first) * 100
   const TrendIcon = change < 0 ? TrendingDownIcon : TrendingUpIcon
 
   return (

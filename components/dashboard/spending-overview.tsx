@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { ChartPieIcon } from "lucide-react"
 import { Label, Pie, PieChart } from "recharts"
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel"
 import {
@@ -10,11 +11,8 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { RangeSelector } from "@/components/ui/range-selector"
-import {
-  spendingByRange,
-  type SpendingCategoryId,
-  type TimeRange,
-} from "@/lib/dashboard-data"
+import { useAccounts } from "@/contexts/accounts-context"
+import type { SpendingCategoryId, TimeRange } from "@/lib/dashboard-data"
 import { formatCurrency } from "@/lib/utils"
 
 /** Fixed slot order from the validated categorical palette in globals.css.
@@ -37,8 +35,9 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function SpendingOverview() {
+  const { selected } = useAccounts()
   const [range, setRange] = React.useState<TimeRange>("1M")
-  const categories = spendingByRange[range]
+  const categories = selected.data.spendingByRange[range]
   const total = categories.reduce((sum, c) => sum + c.value, 0)
   const chartData = categories.map((c) => ({
     ...c,
@@ -52,6 +51,14 @@ export function SpendingOverview() {
         <RangeSelector defaultRange="1M" onRangeChange={setRange} />
       </PanelHeader>
 
+      {total === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-12 text-center">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-white/5">
+            <ChartPieIcon className="size-5 text-label" aria-hidden />
+          </span>
+          <span className="text-sm text-label">No spending yet</span>
+        </div>
+      ) : (
       <div className="flex flex-col items-center gap-6 sm:flex-row sm:gap-8">
         <ChartContainer
           config={chartConfig}
@@ -136,6 +143,7 @@ export function SpendingOverview() {
           ))}
         </ul>
       </div>
+      )}
     </Panel>
   )
 }
