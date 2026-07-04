@@ -4,7 +4,7 @@ import { TotalBalance } from "@/components/dashboard/total-balance"
 import { AccountCards } from "@/components/dashboard/account-cards"
 import { QuickActions } from "@/components/dashboard/quick-actions"
 import { MoneyFlow } from "@/components/dashboard/money-flow"
-import { RecentExpenses } from "@/components/dashboard/recent-expenses"
+import { RecentActivity } from "@/components/dashboard/recent-activity"
 import { SpendingOverview } from "@/components/dashboard/spending-overview"
 
 export default async function OverviewPage() {
@@ -20,7 +20,7 @@ export default async function OverviewPage() {
           <TotalBalance />
           <AccountCards />
           <QuickActions />
-          <RecentExpenses />
+          <RecentActivity />
         </div>
 
         <div className="flex flex-col gap-6">

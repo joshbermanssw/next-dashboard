@@ -14,6 +14,9 @@ import {
   BitcoinIcon,
   WalletIcon,
   GlobeIcon,
+  ShoppingBagIcon,
+  ShoppingCartIcon,
+  CarIcon,
 } from "lucide-react"
 
 export type AccountTab = {
@@ -40,12 +43,27 @@ export type SeriesPoint = {
   value: number
 }
 
-export type Expense = {
+export type Transaction = {
   id: string
   name: string
-  date: string
-  category: string
+  /** Secondary line — merchant detail, payer, or location. */
+  detail: string
+  icon: LucideIcon
+  /** Signed AUD amount — negative for debits, positive for credits. */
   amount: number
+}
+
+export type SpendingCategoryId =
+  | "crypto"
+  | "travel"
+  | "shopping"
+  | "groceries"
+  | "other"
+
+export type SpendingCategory = {
+  id: SpendingCategoryId
+  label: string
+  value: number
 }
 
 export const totalBalance = 42_000
@@ -84,43 +102,43 @@ export const moneyFlow: SeriesPoint[] = [
   { label: "Dec 12", value: 47_000 },
 ]
 
-export const recentExpenses: Expense[] = [
+export const recentActivity: Transaction[] = [
   {
-    id: "exp-1",
-    name: "Dry Cleaning",
-    date: "2026-02-17",
-    category: "Miscellaneous",
-    amount: 28.0,
+    id: "tx-1",
+    name: "Apple Store",
+    detail: "AirPods Pro",
+    icon: ShoppingBagIcon,
+    amount: -249.99,
   },
   {
-    id: "exp-2",
-    name: "Gifts for Friend",
-    date: "2026-02-21",
-    category: "Miscellaneous",
-    amount: 75.0,
+    id: "tx-2",
+    name: "Salary Deposit",
+    detail: "Dosshpay Pty Ltd",
+    icon: PlusIcon,
+    amount: 4_850.0,
   },
   {
-    id: "exp-3",
-    name: "Pet Supplies",
-    date: "2026-02-24",
-    category: "Miscellaneous",
-    amount: 56.8,
+    id: "tx-3",
+    name: "Uber",
+    detail: "Sydney CBD",
+    icon: CarIcon,
+    amount: -34.6,
   },
   {
-    id: "exp-4",
-    name: "Books for Study",
-    date: "2026-02-19",
-    category: "Education",
-    amount: 67.5,
+    id: "tx-4",
+    name: "Woolworths",
+    detail: "Town Hall Metro",
+    icon: ShoppingCartIcon,
+    amount: -86.2,
   },
 ]
 
-/** Spending Overview — monthly spend totals. */
-export const spendingOverview: SeriesPoint[] = [
-  { label: "Jun", value: 3_300 },
-  { label: "Jul", value: 3_300 },
-  { label: "Aug", value: 3_500 },
-  { label: "Sep", value: 3_300 },
-  { label: "Oct", value: 3_750 },
-  { label: "Nov", value: 4_150 },
+/** Spending Overview — current-month spend by category (sums to the donut's
+ * centre total). Ordered largest-first; the donut renders in this order. */
+export const spendingByCategory: SpendingCategory[] = [
+  { id: "crypto", label: "Crypto", value: 1_207 },
+  { id: "travel", label: "Travel", value: 687 },
+  { id: "shopping", label: "Shopping", value: 284 },
+  { id: "groceries", label: "Groceries", value: 118 },
+  { id: "other", label: "Other", value: 71 },
 ]

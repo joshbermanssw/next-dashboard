@@ -70,6 +70,15 @@
   --color-surfaceCardSecondary: #D8D8D8;
   --color-surfaceCardTertiary: #E7EBF2;
 
+  /* Categorical chart palette — validated (CVD + contrast) against the dark
+     panel surface with the dataviz six-checks script. Fixed assignment order:
+     magenta → periwinkle → salmon → blue → lime. */
+  --color-chartMagenta: #DB49B6;
+  --color-chartPeriwinkle: #7A85F2;
+  --color-chartSalmon: #E85744;
+  --color-chartBlue: #3E90D4;
+  --color-chartLime: #84A02C;
+
   /* Dashboard glass panels (dark-on-dark surfaces for charts, lists, tiles) */
   --color-panel: var(--panel);
   --color-panel-hover: var(--panel-hover);

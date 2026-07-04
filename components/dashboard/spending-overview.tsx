@@ -1,6 +1,6 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Label, Pie, PieChart } from "recharts"
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel"
 import {
   ChartContainer,
@@ -9,12 +9,34 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { RangeSelector } from "@/components/ui/range-selector"
-import { spendingOverview } from "@/lib/dashboard-data"
-import { formatCompact, formatCurrency } from "@/lib/utils"
+import {
+  spendingByCategory,
+  type SpendingCategoryId,
+} from "@/lib/dashboard-data"
+import { formatCurrency } from "@/lib/utils"
 
-const chartConfig = {
-  value: { label: "Spending", color: "var(--color-accentBlue)" },
-} satisfies ChartConfig
+/** Fixed slot order from the validated categorical palette in globals.css. */
+const CATEGORY_COLORS: Record<SpendingCategoryId, string> = {
+  crypto: "var(--color-chartMagenta)",
+  travel: "var(--color-chartPeriwinkle)",
+  shopping: "var(--color-chartSalmon)",
+  groceries: "var(--color-chartBlue)",
+  other: "var(--color-chartLime)",
+}
+
+const chartConfig = Object.fromEntries(
+  spendingByCategory.map((c) => [
+    c.id,
+    { label: c.label, color: CATEGORY_COLORS[c.id] },
+  ])
+) satisfies ChartConfig
+
+const chartData = spendingByCategory.map((c) => ({
+  ...c,
+  fill: CATEGORY_COLORS[c.id],
+}))
+
+const total = spendingByCategory.reduce((sum, c) => sum + c.value, 0)
 
 export function SpendingOverview() {
   return (
@@ -24,46 +46,90 @@ export function SpendingOverview() {
         <RangeSelector />
       </PanelHeader>
 
-      <ChartContainer config={chartConfig} className="aspect-auto h-[240px] w-full">
-        <BarChart data={spendingOverview} margin={{ left: 4, right: 8, top: 8 }}>
-          <defs>
-            <linearGradient id="spendingFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-accentBlue)" stopOpacity={0.9} />
-              <stop offset="100%" stopColor="var(--color-accentBlue)" stopOpacity={0.35} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid vertical={false} stroke="var(--color-panel-border)" />
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={10}
-            tick={{ fill: "var(--color-label)", fontSize: 11 }}
-          />
-          <YAxis
-            tickLine={false}
-            axisLine={false}
-            width={40}
-            tickFormatter={(v) => formatCompact(Number(v))}
-            tick={{ fill: "var(--color-label)", fontSize: 11 }}
-          />
-          <ChartTooltip
-            cursor={{ fill: "var(--color-panel-hover)" }}
-            content={
-              <ChartTooltipContent
-                labelClassName="text-card-foreground"
-                formatter={(value) => formatCurrency(Number(value))}
+      <div className="flex flex-col items-center gap-6 sm:flex-row sm:gap-8">
+        <ChartContainer
+          config={chartConfig}
+          className="aspect-square w-44 shrink-0"
+        >
+          <PieChart>
+            <ChartTooltip
+              cursor={false}
+              content={
+                <ChartTooltipContent
+                  hideLabel
+                  formatter={(value, name, item) => (
+                    <div className="flex w-full items-center gap-2">
+                      <span
+                        aria-hidden
+                        className="size-2.5 shrink-0 rounded-[2px]"
+                        style={{ background: item?.payload?.fill }}
+                      />
+                      <span className="text-muted-foreground">{name}</span>
+                      <span className="ml-auto font-medium tabular-nums text-foreground">
+                        {formatCurrency(Number(value))}
+                      </span>
+                    </div>
+                  )}
+                />
+              }
+            />
+            <Pie
+              data={chartData}
+              dataKey="value"
+              nameKey="label"
+              innerRadius="64%"
+              outerRadius="96%"
+              paddingAngle={2}
+              cornerRadius={4}
+              stroke="transparent"
+            >
+              <Label
+                content={({ viewBox }) => {
+                  if (!viewBox || !("cx" in viewBox) || !("cy" in viewBox)) {
+                    return null
+                  }
+                  const cx = viewBox.cx ?? 0
+                  const cy = viewBox.cy ?? 0
+                  return (
+                    <text x={cx} y={cy} textAnchor="middle">
+                      <tspan
+                        x={cx}
+                        y={cy - 10}
+                        className="fill-label text-xs font-medium tracking-wide"
+                      >
+                        AUD
+                      </tspan>
+                      <tspan
+                        x={cx}
+                        y={cy + 12}
+                        className="fill-blueLightest text-xl font-semibold"
+                      >
+                        {total.toLocaleString("en-AU")}
+                      </tspan>
+                    </text>
+                  )
+                }}
               />
-            }
-          />
-          <Bar
-            dataKey="value"
-            fill="url(#spendingFill)"
-            radius={[6, 6, 0, 0]}
-            maxBarSize={36}
-          />
-        </BarChart>
-      </ChartContainer>
+            </Pie>
+          </PieChart>
+        </ChartContainer>
+
+        <ul className="flex w-full flex-col gap-3">
+          {spendingByCategory.map((c) => (
+            <li key={c.id} className="flex items-center gap-2.5 text-sm">
+              <span
+                aria-hidden
+                className="size-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: CATEGORY_COLORS[c.id] }}
+              />
+              <span className="font-medium text-blueLight">{c.label}</span>
+              <span className="ml-auto tabular-nums text-label">
+                {Math.round((c.value / total) * 100)}%
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </Panel>
   )
 }
