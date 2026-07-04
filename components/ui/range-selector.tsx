@@ -2,10 +2,10 @@
 
 import * as React from "react"
 import { CalendarIcon } from "lucide-react"
+import { TIME_RANGES, type TimeRange } from "@/lib/dashboard-data"
 import { cn } from "@/lib/utils"
 
-const RANGES = ["1M", "3M", "6M", "1Y"] as const
-export type Range = (typeof RANGES)[number]
+export type Range = TimeRange
 
 /**
  * Compact time-range pill (matches the "6M" control in the design). Cycles
@@ -16,14 +16,14 @@ export function RangeSelector({
   onRangeChange,
   className,
 }: {
-  defaultRange?: Range
-  onRangeChange?: (range: Range) => void
+  defaultRange?: TimeRange
+  onRangeChange?: (range: TimeRange) => void
   className?: string
 }) {
-  const [range, setRange] = React.useState<Range>(defaultRange)
+  const [range, setRange] = React.useState<TimeRange>(defaultRange)
 
   function cycle() {
-    const next = RANGES[(RANGES.indexOf(range) + 1) % RANGES.length]
+    const next = TIME_RANGES[(TIME_RANGES.indexOf(range) + 1) % TIME_RANGES.length]
     setRange(next)
     onRangeChange?.(next)
   }

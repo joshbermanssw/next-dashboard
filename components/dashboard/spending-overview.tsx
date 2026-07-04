@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { Label, Pie, PieChart } from "recharts"
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel"
 import {
@@ -10,12 +11,15 @@ import {
 } from "@/components/ui/chart"
 import { RangeSelector } from "@/components/ui/range-selector"
 import {
-  spendingByCategory,
+  spendingByRange,
   type SpendingCategoryId,
+  type TimeRange,
 } from "@/lib/dashboard-data"
 import { formatCurrency } from "@/lib/utils"
 
-/** Fixed slot order from the validated categorical palette in globals.css. */
+/** Fixed slot order from the validated categorical palette in globals.css.
+ * Colour follows the category, never its rank — the mapping is identical in
+ * every time window. */
 const CATEGORY_COLORS: Record<SpendingCategoryId, string> = {
   crypto: "var(--color-chartMagenta)",
   travel: "var(--color-chartPeriwinkle)",
@@ -24,26 +28,28 @@ const CATEGORY_COLORS: Record<SpendingCategoryId, string> = {
   other: "var(--color-chartLime)",
 }
 
-const chartConfig = Object.fromEntries(
-  spendingByCategory.map((c) => [
-    c.id,
-    { label: c.label, color: CATEGORY_COLORS[c.id] },
-  ])
-) satisfies ChartConfig
-
-const chartData = spendingByCategory.map((c) => ({
-  ...c,
-  fill: CATEGORY_COLORS[c.id],
-}))
-
-const total = spendingByCategory.reduce((sum, c) => sum + c.value, 0)
+const chartConfig = {
+  crypto: { label: "Crypto", color: CATEGORY_COLORS.crypto },
+  travel: { label: "Travel", color: CATEGORY_COLORS.travel },
+  shopping: { label: "Shopping", color: CATEGORY_COLORS.shopping },
+  groceries: { label: "Groceries", color: CATEGORY_COLORS.groceries },
+  other: { label: "Other", color: CATEGORY_COLORS.other },
+} satisfies ChartConfig
 
 export function SpendingOverview() {
+  const [range, setRange] = React.useState<TimeRange>("1M")
+  const categories = spendingByRange[range]
+  const total = categories.reduce((sum, c) => sum + c.value, 0)
+  const chartData = categories.map((c) => ({
+    ...c,
+    fill: CATEGORY_COLORS[c.id],
+  }))
+
   return (
     <Panel className="flex flex-col gap-6">
       <PanelHeader>
         <PanelTitle>Spending Overview</PanelTitle>
-        <RangeSelector />
+        <RangeSelector defaultRange="1M" onRangeChange={setRange} />
       </PanelHeader>
 
       <div className="flex flex-col items-center gap-6 sm:flex-row sm:gap-8">
@@ -115,7 +121,7 @@ export function SpendingOverview() {
         </ChartContainer>
 
         <ul className="flex w-full flex-col gap-3">
-          {spendingByCategory.map((c) => (
+          {categories.map((c) => (
             <li key={c.id} className="flex items-center gap-2.5 text-sm">
               <span
                 aria-hidden
