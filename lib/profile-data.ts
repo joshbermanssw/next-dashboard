@@ -79,8 +79,6 @@ export const userProfile: UserProfile = {
   },
 }
 
-export const fullName = `${userProfile.firstName} ${userProfile.lastName}`
-export const initials = `${userProfile.firstName[0]}${userProfile.lastName[0]}`
 export const formattedAddress = `${userProfile.address.street}, ${userProfile.address.city}, ${userProfile.address.state} ${userProfile.address.postalCode}, ${userProfile.address.country}`
 
 export type ProfileMenuItem = {

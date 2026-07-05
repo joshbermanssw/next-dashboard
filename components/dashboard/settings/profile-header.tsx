@@ -1,9 +1,16 @@
+"use client"
+
 import { BadgeCheckIcon } from "lucide-react"
 import { Panel } from "@/components/ui/panel"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { fullName, initials, userProfile } from "@/lib/profile-data"
+import { useUser } from "@/contexts/user-context"
+import { userProfile } from "@/lib/profile-data"
 
 export function ProfileHeader() {
+  const { customer } = useUser()
+  const fullName = `${customer.firstName} ${customer.lastName}`
+  const initials = `${customer.firstName[0]}${customer.lastName[0]}`
+
   return (
     <Panel className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
       <Avatar className="size-16 text-lg">

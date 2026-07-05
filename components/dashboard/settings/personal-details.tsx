@@ -1,6 +1,9 @@
+"use client"
+
 import { CheckCircle2Icon, AlertCircleIcon } from "lucide-react"
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel"
-import { fullName, formattedAddress, userProfile } from "@/lib/profile-data"
+import { useUser } from "@/contexts/user-context"
+import { formattedAddress, userProfile } from "@/lib/profile-data"
 import { cn } from "@/lib/utils"
 
 type Field = {
@@ -9,14 +12,18 @@ type Field = {
   verified?: boolean
 }
 
-const fields: Field[] = [
-  { label: "Name", value: fullName },
-  { label: "Email", value: userProfile.email, verified: userProfile.emailVerified },
-  { label: "Phone", value: userProfile.phone, verified: userProfile.phoneVerified },
-  { label: "Address", value: formattedAddress },
-]
-
 export function PersonalDetails() {
+  const { customer } = useUser()
+
+  // Name, email, and phone come from the live session; the rest of the
+  // profile (address, verification flags) is still design-phase stub data.
+  const fields: Field[] = [
+    { label: "Name", value: `${customer.firstName} ${customer.lastName}` },
+    { label: "Email", value: customer.email, verified: userProfile.emailVerified },
+    { label: "Phone", value: customer.phone, verified: userProfile.phoneVerified },
+    { label: "Address", value: formattedAddress },
+  ]
+
   return (
     <Panel className="flex flex-col gap-2">
       <PanelHeader>
