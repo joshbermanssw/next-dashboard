@@ -136,7 +136,7 @@ export function DossherChat() {
 
             <div
               ref={scrollRef}
-              className="flex flex-1 flex-col gap-3 overflow-y-auto p-4"
+              className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 [color-scheme:dark] [scrollbar-width:thin] [scrollbar-color:rgb(255_255_255/0.12)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/10"
             >
               <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-panel-border bg-panel p-4">
                 <p className="text-sm leading-relaxed text-foreground">
