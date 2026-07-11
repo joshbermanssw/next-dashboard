@@ -28,8 +28,6 @@ import {
 
 export type BankCard = {
   id: string
-  /** Tailwind background-image token: `bg-bank-gradient-1` | `bg-bank-gradient-2` */
-  gradient: "bg-bank-gradient-1" | "bg-bank-gradient-2"
   last4: string
 }
 
@@ -190,8 +188,8 @@ const cryptoMoneyFlow: Record<TimeRange, SeriesPoint[]> = {
 const cryptoData: AccountData = {
   balance: 42_000,
   cards: [
-    { id: "card-1", gradient: "bg-bank-gradient-1", last4: "4291" },
-    { id: "card-2", gradient: "bg-bank-gradient-2", last4: "8830" },
+    { id: "card-1", last4: "4291" },
+    { id: "card-2", last4: "8830" },
   ],
   moneyFlowByRange: cryptoMoneyFlow,
   recentActivity: [
@@ -258,7 +256,7 @@ const cryptoData: AccountData = {
 
 const everydayData: AccountData = {
   balance: 8_420,
-  cards: [{ id: "card-3", gradient: "bg-bank-gradient-1", last4: "5512" }],
+  cards: [{ id: "card-3", last4: "5512" }],
   moneyFlowByRange: {
     "1M": [
       { label: "Nov 14", value: 7_650 },
@@ -383,7 +381,7 @@ const everydayData: AccountData = {
 
 const globalData: AccountData = {
   balance: 12_940,
-  cards: [{ id: "card-4", gradient: "bg-bank-gradient-2", last4: "7746" }],
+  cards: [{ id: "card-4", last4: "7746" }],
   moneyFlowByRange: {
     "1M": [
       { label: "Nov 14", value: 13_800 },

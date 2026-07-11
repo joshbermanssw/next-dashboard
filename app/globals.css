@@ -17,8 +17,6 @@
   --color-sidebar: var(--sidebar);
   --background-image-sidebar-gradient: var(--sidebar-gradient);
   --background-image-background-gradient: var(--background-gradient);
-  --background-image-bank-gradient-1: var(--bank-gradient-1);
-  --background-image-bank-gradient-2: var(--bank-gradient-2);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -148,10 +146,6 @@
   --positive: #4ED7A0;
   --negative: #F87171;
   --label: #8B95B8;
-
-  /* Bank card gradients (top-right light → bottom-left deep navy) */
-  --bank-gradient-1: linear-gradient(120deg, #1B2A78 0%, #2F6FD0 52%, #5BB3EF 100%);
-  --bank-gradient-2: linear-gradient(120deg, #0A1248 0%, #1B3B86 55%, #2F6FC4 100%);
 }
 
 @layer base {

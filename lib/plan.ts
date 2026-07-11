@@ -1,7 +1,31 @@
 import * as z from "zod"
+import type { AccountType } from "@/lib/definitions"
 
 export type PlanTier = "BASIC" | "STANDARD" | "PREMIUM"
 export type PlanStatus = "active" | "cancelled" | "expired" | "trial"
+
+/** Bank-card face, one per `public/cards/<design>.svg`. */
+export type CardDesign = "basic" | "standard" | "premium" | "business"
+
+/**
+ * Picks the bank-card face. A corporate account always shows the business card;
+ * everyday accounts show the card matching their plan tier, defaulting to
+ * `basic` when the tier is unknown (no plan / the plan fetch failed).
+ */
+export function planTierToCardDesign(
+  tier: PlanTier | null,
+  accountType: AccountType,
+): CardDesign {
+  if (accountType === "corporate") return "business"
+  switch (tier) {
+    case "PREMIUM":
+      return "premium"
+    case "STANDARD":
+      return "standard"
+    default:
+      return "basic"
+  }
+}
 
 const MoneySchema = z.union([z.string(), z.number()]).nullish()
 

@@ -4,6 +4,7 @@ import {
   formatPlanDate,
   extractFeatures,
   planRenewalLine,
+  planTierToCardDesign,
   toCurrentPlan,
   type CurrentPlan,
 } from "@/lib/plan"
@@ -109,5 +110,21 @@ describe("toCurrentPlan", () => {
   })
   it("throws on structurally invalid data (missing plans.name)", () => {
     expect(() => toCurrentPlan({ planId: 1, plans: { id: 1 } })).toThrow()
+  })
+})
+
+describe("planTierToCardDesign", () => {
+  it("always shows the business card for corporate accounts", () => {
+    expect(planTierToCardDesign("PREMIUM", "corporate")).toBe("business")
+    expect(planTierToCardDesign("BASIC", "corporate")).toBe("business")
+    expect(planTierToCardDesign(null, "corporate")).toBe("business")
+  })
+  it("maps everyday tiers to their matching face", () => {
+    expect(planTierToCardDesign("PREMIUM", "everyday")).toBe("premium")
+    expect(planTierToCardDesign("STANDARD", "everyday")).toBe("standard")
+    expect(planTierToCardDesign("BASIC", "everyday")).toBe("basic")
+  })
+  it("defaults an unknown/absent tier to basic", () => {
+    expect(planTierToCardDesign(null, "everyday")).toBe("basic")
   })
 })

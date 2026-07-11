@@ -2,31 +2,13 @@
 
 import { revalidatePath } from "next/cache"
 import { verifySession } from "@/server/auth/dal"
-import type { Session } from "@/server/auth/session"
+import { resolveAccount } from "@/server/auth/account"
 import { subscribePlan, cancelPlan } from "@/server/bff/clients/plan"
 import { getPlanCatalog } from "@/server/bff/clients/plan-catalog"
-import { getCustomerAccount } from "@/server/bff/clients/customer"
-import type { AccountType } from "@/lib/definitions"
 
 export type PlanActionState = { success: boolean; message: string }
 
 const PLAN_PATH = "/settings/plan"
-
-type ResolvedAccount = { accountId?: string; accountType: AccountType }
-
-// accountId/accountType are captured at login, but sessions predating this feature
-// lack them. Resolve on demand so actions work without forcing a re-login.
-async function resolveAccount(session: Session): Promise<ResolvedAccount> {
-  if (session.accountId) {
-    return { accountId: session.accountId, accountType: session.accountType ?? "everyday" }
-  }
-  try {
-    const acct = await getCustomerAccount(session.upstreamJwt, session.customer.id)
-    return { accountId: acct.accountId, accountType: acct.accountType ?? "everyday" }
-  } catch {
-    return { accountId: undefined, accountType: "everyday" }
-  }
-}
 
 export async function subscribeToPlanAction(
   planId: number,

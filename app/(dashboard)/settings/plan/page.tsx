@@ -2,8 +2,7 @@ import Link from "next/link"
 import { verifySession } from "@/server/auth/dal"
 import { getCurrentPlan, getPlanHistory } from "@/server/bff/clients/plan"
 import { getPlanCatalog } from "@/server/bff/clients/plan-catalog"
-import { getCustomerAccount } from "@/server/bff/clients/customer"
-import type { AccountType } from "@/lib/definitions"
+import { resolveAccount } from "@/server/auth/account"
 import { CurrentPlanCard } from "@/components/dashboard/settings/plan/current-plan-card"
 import { PlanFeatures } from "@/components/dashboard/settings/plan/plan-features"
 import { CatalogSection } from "@/components/dashboard/settings/plan/catalog-section"
@@ -22,21 +21,7 @@ function PlanMessage({ title, body }: { title: string; body: string }) {
 
 export default async function PlanPage() {
   const session = await verifySession()
-
-  // accountId/accountType are captured at login, but sessions created before this
-  // feature shipped won't have them. Resolve on demand so older sessions self-heal
-  // without forcing a re-login.
-  let accountId = session.accountId
-  let accountType: AccountType = session.accountType ?? "everyday"
-  if (!accountId) {
-    try {
-      const acct = await getCustomerAccount(session.upstreamJwt, session.customer.id)
-      accountId = acct.accountId
-      accountType = acct.accountType ?? accountType
-    } catch {
-      // leave accountId undefined → handled below
-    }
-  }
+  const { accountId, accountType } = await resolveAccount(session)
 
   if (!accountId) {
     return (
