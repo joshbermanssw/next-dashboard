@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# Enforce: every push to `main` must carry a changeset.
+#
+# A push passes when the commits being pushed either ADD a changeset
+# (.changeset/*.md) — including an intentional `npx changeset add --empty`
+# for a no-release change — or DELETE changesets, which is what
+# `changeset version` does when it consumes them into a release.
+#
+# Only pushes to `main` are guarded; feature branches push freely.
+#
+# Wired up via `core.hooksPath=.githooks`, set by the package.json
+# "prepare" script on install (run it manually with:
+#   git config core.hooksPath .githooks).
+
+# All-zeros object id, sized to this repo's hash algorithm (sha1/sha256).
+zero=$(git hash-object --stdin </dev/null | tr '0-9a-f' '0')
+
+status=0
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+	# Only guard pushes that update main.
+	[ "$remote_ref" = "refs/heads/main" ] || continue
+
+	# A branch deletion (local side all zeros) has nothing to check.
+	[ "$local_sha" = "$zero" ] && continue
+
+	# Base to diff against: the remote's current main, or — if main does
+	# not exist on the remote yet — whatever origin/main we know locally,
+	# falling back to the empty tree so the whole history counts.
+	if [ "$remote_sha" = "$zero" ]; then
+		base=$(git rev-parse --verify --quiet origin/main) \
+			|| base=$(git hash-object -t tree /dev/null)
+	else
+		base="$remote_sha"
+	fi
+
+	# Changeset files added in the pushed range (README is scaffolding).
+	added=$(git diff --name-only --diff-filter=A "$base" "$local_sha" \
+		-- '.changeset/*.md' | grep -v '^\.changeset/README\.md$')
+	# Changeset files removed in the pushed range (a release consumed them).
+	removed=$(git diff --name-only --diff-filter=D "$base" "$local_sha" \
+		-- '.changeset/*.md' | grep -v '^\.changeset/README\.md$')
+
+	[ -n "$added" ] || [ -n "$removed" ] && continue
+
+	printf '🦋  No changeset found for the commits you are pushing to main.\n' >&2
+	printf '    Run `npm run changeset` to record what changed,\n' >&2
+	printf '    or `npx changeset add --empty` for a deliberate no-release change.\n' >&2
+	status=1
+done
+
+exit $status
