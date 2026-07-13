@@ -6,10 +6,13 @@
  * component-facing types should stay stable so the UI doesn't change.
  */
 import type { LucideIcon } from "lucide-react"
+import type { AccountType } from "@/lib/definitions"
+import { planTierToCardDesign, type CardDesign, type PlanTier } from "@/lib/plan"
 import {
   ArrowLeftRightIcon,
-  ArrowUpRightIcon,
-  ReceiptTextIcon,
+  ArrowUpIcon,
+  SlidersHorizontalIcon,
+  MoreHorizontalIcon,
   PlusIcon,
   BitcoinIcon,
   WalletIcon,
@@ -26,9 +29,37 @@ import {
   CoffeeIcon,
 } from "lucide-react"
 
+export type CardBrand = "mastercard" | "visa"
+export type CardStatus = "active" | "frozen"
+export type MoneyType = "CRYPTO" | "FIAT"
+
 export type BankCard = {
   id: string
+  /** Owning account. A card belongs to exactly one Account. */
+  accountId: string
   last4: string
+  brand: CardBrand
+  /** Display name, e.g. "Crypto Mastercard", "Mastercard", "Visa". */
+  name: string
+  /** MM/YY. */
+  expiry: string
+  /** Full grouped PAN ending in `last4` — stub, revealed on Card Details only. */
+  number: string
+  /** 3-digit CVC — stub, revealed on Card Details only. */
+  cvc: string
+  status: CardStatus
+  /** Manage-card stub values. */
+  limitPreset: string
+  useType: string
+  moneyType: MoneyType
+  currency: string
+  /** Emoji flag shown next to the currency on the Manage screen. */
+  currencyFlag: string
+}
+
+/** Human label for the brand, used on the Manage "Card type" row. */
+export function brandLabel(brand: CardBrand): string {
+  return brand === "visa" ? "Visa" : "Mastercard"
 }
 
 export type QuickAction = {
@@ -112,16 +143,33 @@ export type AccountData = {
 
 export type Account = {
   id: string
+  /** Owning customer. Accounts are only ever fetched under their customer
+   * (see `getAccountsForCustomer` in `lib/data/accounts.ts`). */
+  customerId: string
   kind: AccountKind
   label: string
+  /** Plan segment for this account (drives the plan catalogue + card face). */
+  accountType: AccountType
+  /** This account's plan tier; `null` falls back to the basic face. */
+  tier: PlanTier | null
   data: AccountData
 }
 
+/**
+ * The bank-card face for an account's cards. Design is a property of the
+ * account (its plan segment + tier), so every card in the account shares it.
+ * This replaces the old customer-wide resolution: the face is owned per account,
+ * not derived once from the session.
+ */
+export function accountCardDesign(account: Account): CardDesign {
+  return planTierToCardDesign(account.tier, account.accountType)
+}
+
 export const quickActions: QuickAction[] = [
-  { id: "transfer", label: "Transfer", icon: ArrowLeftRightIcon },
-  { id: "send", label: "Send", icon: ArrowUpRightIcon },
-  { id: "pay-bills", label: "Pay Bills", icon: ReceiptTextIcon },
-  { id: "deposit", label: "Deposit", icon: PlusIcon },
+  { id: "top-up", label: "Top Up", icon: PlusIcon },
+  { id: "pay", label: "Pay", icon: ArrowUpIcon },
+  { id: "manage", label: "Manage", icon: SlidersHorizontalIcon },
+  { id: "more", label: "More", icon: MoreHorizontalIcon },
 ]
 
 const cryptoMoneyFlow: Record<TimeRange, SeriesPoint[]> = {
@@ -188,8 +236,38 @@ const cryptoMoneyFlow: Record<TimeRange, SeriesPoint[]> = {
 const cryptoData: AccountData = {
   balance: 42_000,
   cards: [
-    { id: "card-1", last4: "4291" },
-    { id: "card-2", last4: "8830" },
+    {
+      id: "card-1",
+      accountId: "crypto",
+      last4: "4291",
+      brand: "mastercard",
+      name: "Crypto Mastercard",
+      expiry: "08/27",
+      number: "5412 8890 4417 4291",
+      cvc: "418",
+      status: "active",
+      limitPreset: "Standard",
+      useType: "Frequent use",
+      moneyType: "CRYPTO",
+      currency: "USDC",
+      currencyFlag: "🇺🇸",
+    },
+    {
+      id: "card-2",
+      accountId: "crypto",
+      last4: "8830",
+      brand: "visa",
+      name: "Crypto Visa",
+      expiry: "08/27",
+      number: "4373 9021 5567 8830",
+      cvc: "902",
+      status: "active",
+      limitPreset: "Standard",
+      useType: "Occasional use",
+      moneyType: "CRYPTO",
+      currency: "USDC",
+      currencyFlag: "🇺🇸",
+    },
   ],
   moneyFlowByRange: cryptoMoneyFlow,
   recentActivity: [
@@ -256,7 +334,24 @@ const cryptoData: AccountData = {
 
 const everydayData: AccountData = {
   balance: 8_420,
-  cards: [{ id: "card-3", last4: "5512" }],
+  cards: [
+    {
+      id: "card-3",
+      accountId: "everyday",
+      last4: "5512",
+      brand: "mastercard",
+      name: "Mastercard",
+      expiry: "08/27",
+      number: "5289 4417 2093 5512",
+      cvc: "231",
+      status: "active",
+      limitPreset: "Standard",
+      useType: "Frequent use",
+      moneyType: "FIAT",
+      currency: "AUD",
+      currencyFlag: "🇦🇺",
+    },
+  ],
   moneyFlowByRange: {
     "1M": [
       { label: "Nov 14", value: 7_650 },
@@ -381,7 +476,24 @@ const everydayData: AccountData = {
 
 const globalData: AccountData = {
   balance: 12_940,
-  cards: [{ id: "card-4", last4: "7746" }],
+  cards: [
+    {
+      id: "card-4",
+      accountId: "global",
+      last4: "7746",
+      brand: "visa",
+      name: "Visa",
+      expiry: "08/27",
+      number: "4916 5523 8842 7746",
+      cvc: "774",
+      status: "active",
+      limitPreset: "Travel",
+      useType: "Frequent use",
+      moneyType: "FIAT",
+      currency: "USD",
+      currencyFlag: "🇺🇸",
+    },
+  ],
   moneyFlowByRange: {
     "1M": [
       { label: "Nov 14", value: 13_800 },
@@ -504,10 +616,17 @@ const globalData: AccountData = {
   },
 }
 
+/** Placeholder owner for the seed accounts; `getAccountsForCustomer` re-stamps
+ * with the signed-in customer's id (single-tenant stub). */
+export const SEED_CUSTOMER_ID = "cust-seed"
+
+// Each account carries its own plan segment + tier, so its card face is owned
+// per account (`accountCardDesign`): crypto → premium, everyday → standard,
+// global → business (corporate).
 export const seedAccounts: Account[] = [
-  { id: "crypto", kind: "crypto", label: "Crypto", data: cryptoData },
-  { id: "everyday", kind: "everyday", label: "Everyday", data: everydayData },
-  { id: "global", kind: "global", label: "Global", data: globalData },
+  { id: "crypto", customerId: SEED_CUSTOMER_ID, kind: "crypto", label: "Crypto", accountType: "everyday", tier: "PREMIUM", data: cryptoData },
+  { id: "everyday", customerId: SEED_CUSTOMER_ID, kind: "everyday", label: "Everyday", accountType: "everyday", tier: "STANDARD", data: everydayData },
+  { id: "global", customerId: SEED_CUSTOMER_ID, kind: "global", label: "Global", accountType: "corporate", tier: null, data: globalData },
 ]
 
 /** Dataset for a brand-new account: $0 balance, no cards, flat money flow,
@@ -526,5 +645,42 @@ export function freshAccountData(): AccountData {
     spendingByRange: Object.fromEntries(
       TIME_RANGES.map((range) => [range, [] as SpendingCategory[]])
     ) as Record<TimeRange, SpendingCategory[]>,
+  }
+}
+
+/* -------------------------------------------------------- account settings */
+
+/** Values shown on an account's Manage screen. */
+export type AccountSettings = {
+  status: string
+  location: string
+  currency: string
+  /** Emoji flag (or globe) shown before the currency code. */
+  currencyFlag: string
+  useType: string
+  /** Number of cards linked to the account — derived from its card list. */
+  linkedCards: number
+}
+
+/** Per-kind settings stubs for the Manage screen. Swap for the account-service
+ * response once wired; the returned shape should stay stable. */
+const accountSettingsByKind: Record<
+  AccountKind,
+  Pick<AccountSettings, "currency" | "currencyFlag" | "useType">
+> = {
+  crypto: { currency: "USDC", currencyFlag: "🇺🇸", useType: "No returns" },
+  everyday: { currency: "AUD", currencyFlag: "🇦🇺", useType: "Everyday spending" },
+  global: { currency: "Multi-currency", currencyFlag: "🌐", useType: "Travel" },
+  splitpay: { currency: "AUD", currencyFlag: "🇦🇺", useType: "Shared" },
+  asset: { currency: "AUD", currencyFlag: "🇦🇺", useType: "Holdings" },
+}
+
+/** Settings shown on the Manage screen for one account. */
+export function getAccountSettings(account: Account): AccountSettings {
+  return {
+    status: "Active",
+    location: "Australia",
+    linkedCards: account.data.cards.length,
+    ...accountSettingsByKind[account.kind],
   }
 }

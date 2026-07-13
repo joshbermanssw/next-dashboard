@@ -13,6 +13,55 @@
 - **Package manager:** npm
 - **Session management:** Jose (HS256 JWT), httpOnly cookies
 
+## Domain Model & Data Ownership
+
+Three domain entities in a strict ownership hierarchy:
+
+```
+Customer  (the logged-in User)
+  └─ Account   a wallet / product: Crypto, Everyday, Global, SplitPay, Asset   (1 Customer : N Accounts)
+       └─ Card   a payment card bound to that Account                          (1 Account : N Cards)
+```
+
+- **User / Customer** - the authenticated person. Backend-real (`Customer` in
+  `lib/definitions.ts`, carried in the session). One per login.
+- **Account** - a money bucket the user holds (Crypto, Everyday, Global, and so
+  on). Each Account carries its own `customerId`, plan `accountType` +
+  `tier`, balance, and cards (`Account` in `lib/dashboard-data.ts`). The word
+  "account" means only this; the session's `accountId` / `accountType` simply
+  point at and typify the customer's active Account rather than naming a second
+  entity.
+- **Card** - a virtual or physical card belonging to exactly one Account. Carries
+  `accountId` (its owner) plus its brand, expiry, limits, and money type
+  (`BankCard` in `lib/dashboard-data.ts`).
+
+### How ownership is modelled
+
+Ownership is expressed as fields and resolved through one accessor layer, never
+by scanning.
+
+1. **One `Account` entity, no overload.** Plan segment (`accountType: everyday |
+   corporate`) and `tier` live on the Account, so its card face is owned per
+   account via `accountCardDesign(account)`. There is no separate "billing
+   account" concept to disambiguate.
+2. **Owner references are fields.** `Card.accountId` names its account;
+   `Account.customerId` names its customer. No lookups scan.
+3. **The card face is an account property.** `accountCardDesign(account)` derives
+   the face from that account's segment + tier. Cards inherit their account's
+   face; there is no customer-wide resolution.
+4. **Routes follow the hierarchy.** `/account/[accountId]/cards/[cardId]`
+   (`/details`, `/manage`). A card resolved under the wrong account `notFound()`s.
+
+### Data-access seam (`lib/data/accounts.ts`)
+
+`getAccountsForCustomer`, `getAccount`, `getCardsForAccount`, and
+`getCard(accountId, cardId)` are the single place data enters the system (O(1)
+index reads over the seed today). This is the swap point for the BFF later:
+replace the bodies with `GET /customers/{id}/accounts`,
+`GET /accounts/{accountId}/cards`, `GET /accounts/{accountId}/cards/{cardId}`.
+The client `AccountsProvider` seeds from `getAccountsForCustomer` and exposes
+`useAccount(id)` / `useCard(accountId, cardId)` selectors backed by id indexes.
+
 ## Commands
 
 ```bash

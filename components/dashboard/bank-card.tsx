@@ -1,6 +1,8 @@
-import { EyeIcon, PlusIcon } from "lucide-react"
+import Link from "next/link"
+import { PlusIcon, SettingsIcon } from "lucide-react"
 import type { BankCard as BankCardType } from "@/lib/dashboard-data"
 import type { CardDesign } from "@/lib/plan"
+import { CardFace } from "@/components/dashboard/cards/card-face"
 
 export function BankCard({
   card,
@@ -10,29 +12,22 @@ export function BankCard({
   design: CardDesign
 }) {
   return (
-    <div className="group relative aspect-[1200/766]">
-      {/* Card face — gradient, DosshPay wordmark, and contactless glyph are all
-          baked into the SVG, including its rounded corners. */}
-      <img
-        src={`/cards/${design}.svg`}
-        alt=""
-        aria-hidden
-        className="pointer-events-none absolute inset-0 size-full object-contain drop-shadow-lg"
-      />
+    <Link
+      href={`/account/${card.accountId}/cards/${card.id}`}
+      aria-label={`${card.name} ending ${card.last4}, card settings`}
+      className="group relative block rounded-2xl transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      <CardFace design={design} last4={card.last4} />
 
-      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-5 pb-5">
-        <span className="text-lg font-medium tracking-[0.2em] text-white/95 [text-shadow:0_1px_3px_rgb(0_0_0/0.35)]">
-          ••••&nbsp;{card.last4}
-        </span>
-        <button
-          type="button"
-          aria-label="Reveal card number"
-          className="rounded-full p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-        >
-          <EyeIcon className="size-4" />
-        </button>
-      </div>
-    </div>
+      {/* Settings cog — fades in on hover/focus (desktop), always shown on touch
+          where there is no hover. Decorative: the whole card is the link. */}
+      <span
+        aria-hidden
+        className="absolute right-[5%] top-[7%] flex size-8 items-center justify-center rounded-full bg-black/25 text-white/90 backdrop-blur-sm transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100 md:group-focus-visible:opacity-100"
+      >
+        <SettingsIcon className="size-4" />
+      </span>
+    </Link>
   )
 }
 
