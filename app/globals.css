@@ -85,6 +85,7 @@
   /* Dashboard semantic accents */
   --color-positive: var(--positive);
   --color-negative: var(--negative);
+  --color-warning: var(--warning);
   --color-label: var(--label);
 
   /* DosshPay body text size tokens */
@@ -97,7 +98,10 @@
 
 :root {
   /* DosshPay dark-first theme */
-  /* --background: var(--color-blueDarker); */
+  /* Opaque page-dark used by bg-background surfaces (dialogs, sheets, drawer,
+   * chart tooltips, header). The page itself paints bg-background-gradient;
+   * this is the flat fill those overlays sit on. */
+  --background: #080B27;
   --background-start: #061134;
   --background-middle: #080B27;
   --background-end: #080B27;
@@ -145,6 +149,7 @@
   /* Trend + label semantics */
   --positive: #4ED7A0;
   --negative: #F87171;
+  --warning: #E9A23B;
   --label: #8B95B8;
 }
 
