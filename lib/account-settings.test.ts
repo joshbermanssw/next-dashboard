@@ -33,8 +33,10 @@ describe("getAccountSettings", () => {
     expect(getAccountSettings(byId("everyday")).linkedCards).toBe(1)
   })
 
-  it("maps the global account to multi-currency", () => {
-    expect(getAccountSettings(byId("global")).currency).toBe("Multi-currency")
+  it("reflects the global account's stored currency", () => {
+    const s = getAccountSettings(byId("global"))
+    expect(s.currency).toBe("USD")
+    expect(s.currencyFlag).toBe("🇺🇸")
   })
 
   it("handles a freshly added account with no cards", () => {
@@ -45,6 +47,8 @@ describe("getAccountSettings", () => {
       label: "SplitPay",
       accountType: "everyday",
       tier: "BASIC",
+      currency: "AUD",
+      currencyFlag: "🇦🇺",
       data: freshAccountData(),
     }
     const s = getAccountSettings(account)

@@ -8,14 +8,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { CreateAccountDialog } from "@/components/dashboard/create-account-dialog"
 import { useAccounts } from "@/contexts/accounts-context"
-import { ACCOUNT_KINDS, accountKindMeta } from "@/lib/dashboard-data"
+import {
+  ACCOUNT_KINDS,
+  accountKindMeta,
+  type AccountKind,
+} from "@/lib/dashboard-data"
 import { cn } from "@/lib/utils"
 
 export function AccountTabs() {
-  const { accounts, selected, selectAccount, addAccount } = useAccounts()
+  const { accounts, selected, selectAccount } = useAccounts()
   const scrollerRef = React.useRef<HTMLDivElement>(null)
   const prevCount = React.useRef(accounts.length)
+  const [createKind, setCreateKind] = React.useState<AccountKind | null>(null)
 
   // A freshly added pill lands at the end of the row — bring it into view.
   React.useEffect(() => {
@@ -71,7 +77,7 @@ export function AccountTabs() {
           {ACCOUNT_KINDS.map((kind) => {
             const meta = accountKindMeta[kind]
             return (
-              <DropdownMenuItem key={kind} onClick={() => addAccount(kind)}>
+              <DropdownMenuItem key={kind} onClick={() => setCreateKind(kind)}>
                 <meta.icon className="size-4" />
                 {meta.label}
               </DropdownMenuItem>
@@ -79,6 +85,14 @@ export function AccountTabs() {
           })}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <CreateAccountDialog
+        kind={createKind}
+        open={createKind !== null}
+        onOpenChange={(open) => {
+          if (!open) setCreateKind(null)
+        }}
+      />
     </div>
   )
 }

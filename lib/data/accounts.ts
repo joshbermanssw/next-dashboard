@@ -49,6 +49,10 @@ export function getCardsForAccount(accountId: string): BankCard[] {
  * match its owner — so a mismatched `/account/{a}/cards/{c}` URL `notFound()`s
  * instead of leaking another account's card.
  */
+// TODO(bff): once these read a real backend, scope resolution to the session
+// customer (`getAccount(customerId, id)` / `getCard(customerId, accountId, cardId)`)
+// and `notFound()` on mismatch — today's single-tenant seed hides the missing
+// ownership check, which becomes an IDOR the moment accounts span customers.
 export function getCard(
   accountId: string,
   cardId: string,

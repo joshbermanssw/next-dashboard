@@ -128,6 +128,63 @@ export const accountKindMeta: Record<
   asset: { label: "Asset", icon: GemIcon },
 }
 
+/* -------------------------------------------------------------- currencies */
+
+/** One selectable currency in the create-account flow. */
+export type CurrencyOption = {
+  /** Ticker; stored on the account and shown as the option's title. */
+  code: string
+  /** Symbol shown after the code, e.g. "A$", "$", "€", "₮". */
+  symbol: string
+  /** Full descriptive name — the option subtitle and the review-screen value. */
+  name: string
+  /** Emoji flag before the code; reused as the account's Region. */
+  flag: string
+}
+
+/** Crypto accounts settle in a stablecoin. */
+export const CRYPTO_CURRENCIES: CurrencyOption[] = [
+  { code: "AUDM", symbol: "A$", name: "AUD Stablecoin", flag: "🇦🇺" },
+  { code: "TGBP", symbol: "£", name: "GBP Stablecoin", flag: "🇬🇧" },
+  { code: "USDC", symbol: "$", name: "USD Coin", flag: "🇺🇸" },
+  { code: "USDT", symbol: "₮", name: "Tether", flag: "🌐" },
+  { code: "EURC", symbol: "€", name: "EUR Coin", flag: "🇪🇺" },
+  { code: "CANC", symbol: "C$", name: "CAD Stablecoin", flag: "🇨🇦" },
+  { code: "NZC", symbol: "NZ$", name: "NZD Stablecoin", flag: "🇳🇿" },
+]
+
+/** Global accounts hold a single fiat currency. */
+export const GLOBAL_CURRENCIES: CurrencyOption[] = [
+  { code: "AUD", symbol: "$", name: "Australian Dollar", flag: "🇦🇺" },
+  { code: "USD", symbol: "$", name: "United States Dollar", flag: "🇺🇸" },
+  { code: "EUR", symbol: "€", name: "Euro", flag: "🇪🇺" },
+  { code: "GBP", symbol: "£", name: "Pound Sterling", flag: "🇬🇧" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen", flag: "🇯🇵" },
+  { code: "CNY", symbol: "¥", name: "Chinese Yuan", flag: "🇨🇳" },
+  { code: "CAD", symbol: "$", name: "Canadian Dollar", flag: "🇨🇦" },
+]
+
+/** The default AUD every non-currency-choosing account settles in. */
+export const AUD_CURRENCY: CurrencyOption = GLOBAL_CURRENCIES[0]
+
+/** Every currency by code → O(1) lookup of name/symbol/flag from a stored code. */
+export const CURRENCY_BY_CODE: Record<string, CurrencyOption> =
+  Object.fromEntries(
+    [...CRYPTO_CURRENCIES, ...GLOBAL_CURRENCIES].map((c) => [c.code, c])
+  )
+
+/**
+ * The currencies a given kind can settle in, or `null` when the kind is fixed
+ * to AUD (everyday, splitpay, asset) — those skip the currency step entirely.
+ */
+export function currencyOptionsForKind(
+  kind: AccountKind
+): CurrencyOption[] | null {
+  if (kind === "crypto") return CRYPTO_CURRENCIES
+  if (kind === "global") return GLOBAL_CURRENCIES
+  return null
+}
+
 /** Everything the dashboard shows for one account. */
 export type AccountData = {
   balance: number
@@ -141,6 +198,74 @@ export type AccountData = {
   spendingByRange: Record<TimeRange, SpendingCategory[]>
 }
 
+/* --------------------------------------------------------------- splitpay */
+
+/** Lifecycle of a SplitPay pool: collecting → spending from the pool → wound up. */
+export type SplitPayStatus = "funding" | "spending" | "closed"
+
+/** One person paying into a SplitPay pool. */
+export type SplitPayContributor = {
+  id: string
+  name: string
+  /** Avatar initial. */
+  initial: string
+  /** Amount this person has contributed so far, in the pool's currency. */
+  amount: number
+}
+
+/** The shared-funding sub-model carried only by `splitpay` accounts. */
+export type SplitPayDetails = {
+  /** Human-facing pool number shown as "Account #466793". */
+  accountNumber: string
+  /** How much needs collecting before the pool can be spent. */
+  targetAmount: number
+  /** How much has been collected so far (mirrors the account balance). */
+  collected: number
+  /** Absolute funding deadline (epoch ms). Drives the countdown. */
+  deadline: number
+  status: SplitPayStatus
+  /** Everyone paying in; the creator is seeded as the first contributor. */
+  contributors: SplitPayContributor[]
+}
+
+/** Quick-select purposes on the SplitPay target step. */
+export const SPLITPAY_TARGET_PRESETS = [
+  "Trip",
+  "Dinner",
+  "Gift",
+  "Party",
+  "Event",
+  "Team Lunch",
+  "Birthday",
+  "Wedding",
+] as const
+
+/** Funding-period presets on the SplitPay time-limit step. */
+export const SPLITPAY_DURATION_PRESETS: { label: string; hours: number }[] = [
+  { label: "6h", hours: 6 },
+  { label: "12h", hours: 12 },
+  { label: "1d", hours: 24 },
+  { label: "2d", hours: 48 },
+  { label: "3d", hours: 72 },
+  { label: "7d", hours: 168 },
+]
+
+/**
+ * Format a remaining duration as "2d 23h 59min" (SplitPay countdown). Clamps at
+ * zero and drops leading zero units, always keeping at least the minutes.
+ */
+export function formatCountdown(msRemaining: number): string {
+  const total = Math.max(0, Math.floor(msRemaining / 1000))
+  const days = Math.floor(total / 86400)
+  const hours = Math.floor((total % 86400) / 3600)
+  const mins = Math.floor((total % 3600) / 60)
+  const parts: string[] = []
+  if (days) parts.push(`${days}d`)
+  if (days || hours) parts.push(`${hours}h`)
+  parts.push(`${mins}min`)
+  return parts.join(" ")
+}
+
 export type Account = {
   id: string
   /** Owning customer. Accounts are only ever fetched under their customer
@@ -152,6 +277,13 @@ export type Account = {
   accountType: AccountType
   /** This account's plan tier; `null` falls back to the basic face. */
   tier: PlanTier | null
+  /** Currency the account settles in, chosen at creation (code, e.g. "USDC").
+   * everyday/splitpay/asset are always "AUD". */
+  currency: string
+  /** Emoji flag for `currency`, cached so reads don't re-look-up the catalogue. */
+  currencyFlag: string
+  /** Shared-funding state — present only on `splitpay` accounts. */
+  splitpay?: SplitPayDetails
   data: AccountData
 }
 
@@ -624,9 +756,9 @@ export const SEED_CUSTOMER_ID = "cust-seed"
 // per account (`accountCardDesign`): crypto → premium, everyday → standard,
 // global → business (corporate).
 export const seedAccounts: Account[] = [
-  { id: "crypto", customerId: SEED_CUSTOMER_ID, kind: "crypto", label: "Crypto", accountType: "everyday", tier: "PREMIUM", data: cryptoData },
-  { id: "everyday", customerId: SEED_CUSTOMER_ID, kind: "everyday", label: "Everyday", accountType: "everyday", tier: "STANDARD", data: everydayData },
-  { id: "global", customerId: SEED_CUSTOMER_ID, kind: "global", label: "Global", accountType: "corporate", tier: null, data: globalData },
+  { id: "crypto", customerId: SEED_CUSTOMER_ID, kind: "crypto", label: "Crypto", accountType: "everyday", tier: "PREMIUM", currency: "USDC", currencyFlag: "🇺🇸", data: cryptoData },
+  { id: "everyday", customerId: SEED_CUSTOMER_ID, kind: "everyday", label: "Everyday", accountType: "everyday", tier: "STANDARD", currency: "AUD", currencyFlag: "🇦🇺", data: everydayData },
+  { id: "global", customerId: SEED_CUSTOMER_ID, kind: "global", label: "Global", accountType: "corporate", tier: null, currency: "USD", currencyFlag: "🇺🇸", data: globalData },
 ]
 
 /** Dataset for a brand-new account: $0 balance, no cards, flat money flow,
@@ -662,25 +794,25 @@ export type AccountSettings = {
   linkedCards: number
 }
 
-/** Per-kind settings stubs for the Manage screen. Swap for the account-service
+/** Per-kind "use type" copy for the Manage screen. Swap for the account-service
  * response once wired; the returned shape should stay stable. */
-const accountSettingsByKind: Record<
-  AccountKind,
-  Pick<AccountSettings, "currency" | "currencyFlag" | "useType">
-> = {
-  crypto: { currency: "USDC", currencyFlag: "🇺🇸", useType: "No returns" },
-  everyday: { currency: "AUD", currencyFlag: "🇦🇺", useType: "Everyday spending" },
-  global: { currency: "Multi-currency", currencyFlag: "🌐", useType: "Travel" },
-  splitpay: { currency: "AUD", currencyFlag: "🇦🇺", useType: "Shared" },
-  asset: { currency: "AUD", currencyFlag: "🇦🇺", useType: "Holdings" },
+const accountUseTypeByKind: Record<AccountKind, string> = {
+  crypto: "No returns",
+  everyday: "Everyday spending",
+  global: "Travel",
+  splitpay: "Shared",
+  asset: "Holdings",
 }
 
-/** Settings shown on the Manage screen for one account. */
+/** Settings shown on the Manage screen for one account. Currency reflects the
+ * account's own stored choice (set at creation), not a per-kind stub. */
 export function getAccountSettings(account: Account): AccountSettings {
   return {
     status: "Active",
     location: "Australia",
     linkedCards: account.data.cards.length,
-    ...accountSettingsByKind[account.kind],
+    currency: account.currency,
+    currencyFlag: account.currencyFlag,
+    useType: accountUseTypeByKind[account.kind],
   }
 }
