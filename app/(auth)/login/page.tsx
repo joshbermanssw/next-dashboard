@@ -210,12 +210,22 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-blueLightest">
           Don&apos;t have an account?{" "}
+          <Link
+            href="/signup"
+            className="font-medium text-accentBlue hover:text-accentBlueHover"
+          >
+            Create an account
+          </Link>
+        </p>
+
+        <p className="text-center text-xs text-blueLight/70">
+          Prefer mobile?{" "}
           <button
             type="button"
             onClick={openSignup}
             className="font-medium text-accentBlue hover:text-accentBlueHover cursor-pointer"
           >
-            Create an account
+            Get the app
           </button>
         </p>
       </div>
@@ -284,11 +294,11 @@ function SignupDialog({
 
         <header className="space-y-2 text-center">
           <HeadingTag level={5} className="font-semibold perspective-distant">
-            Sign up in the app
+            Get the DosshPay app
           </HeadingTag>
           <p className="text-sm text-blueLight">
-            DosshPay accounts are created on mobile. Scan the QR code or grab
-            the app from your store.
+            Scan the QR code or grab the app from your store. You can also
+            create your account right here on the web.
           </p>
         </header>
 
