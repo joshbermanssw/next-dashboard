@@ -59,12 +59,14 @@ describe("toCatalogPlan", () => {
       monthlyPriceMinor: 1099,
       formattedPrice: "10.99 / month",
       features: ["Global account", "Crypto wallet"],
+      addOns: [],
       learnMoreSlug: "/premium",
     })
   })
-  it("defaults missing features to [] and unknown names to null tier", () => {
+  it("defaults missing features and add-ons to [] and unknown names to null tier", () => {
     const r = toCatalogPlan({ ID: 9, plan_name: "Mystery", month_cost: 0 })
     expect(r.features).toEqual([])
+    expect(r.addOns).toEqual([])
     expect(r.tier).toBeNull()
     expect(r.formattedPrice).toBe("Free")
   })

@@ -146,13 +146,47 @@ export function toCurrentPlan(data: unknown): CurrentPlan {
 // ── Plan catalogue (GET {assets}/plans/{accountType} → payload: PlanDto[]) ──
 
 // PlanDto exposes a monthly price only, in cents, and no currency.
+const PlanAddOnDtoSchema = z.object({
+  name: z.string(),
+  cost: z.number(),
+  description: z.string().optional().default(""),
+})
+
 const PlanDtoSchema = z.object({
   ID: z.number(),
   plan_name: z.string(),
   month_cost: z.number(),
   features: z.array(z.string()).optional().default([]),
+  add_ons: z.array(PlanAddOnDtoSchema).optional().default([]),
   learn_more_slug: z.string().optional().default(""),
 })
+
+/**
+ * Add-on identifiers the soft-provisioning API accepts in `selectedAddOns`.
+ * Deliberately narrower than the catalogue: see `toAddOnKey`.
+ */
+export type AddOnKey = "SPLIT_PAY"
+
+export type PlanAddOn = {
+  key: AddOnKey
+  name: string
+  description: string
+  monthlyPriceMinor: number
+}
+
+/**
+ * Maps a catalogue add-on's prose name to the upstream enum.
+ *
+ * The catalogue also advertises "Multipay", but `PUT /customers/{id}/
+ * soft-provisioning` only accepts SPLIT_PAY — sending anything else is a 400.
+ * Returning null here drops unprovisionable add-ons at the seam, so the picker
+ * can never offer something checkout would reject. Add a case here (and to
+ * AddOnKey) once the backend enum widens.
+ */
+function toAddOnKey(name: string): AddOnKey | null {
+  const normalized = name.trim().toLowerCase().replace(/[^a-z]/g, "")
+  return normalized === "splitpay" ? "SPLIT_PAY" : null
+}
 
 export type CatalogPlan = {
   id: number
@@ -161,6 +195,7 @@ export type CatalogPlan = {
   monthlyPriceMinor: number
   formattedPrice: string
   features: string[]
+  addOns: PlanAddOn[]
   learnMoreSlug: string
 }
 
@@ -172,6 +207,17 @@ export function formatCatalogPrice(monthCostMinor: number): string {
 
 export function toCatalogPlan(dto: unknown): CatalogPlan {
   const d = PlanDtoSchema.parse(dto)
+  const addOns = d.add_ons.flatMap((a) => {
+    const key = toAddOnKey(a.name)
+    return key
+      ? [{
+          key,
+          name: a.name,
+          description: a.description,
+          monthlyPriceMinor: a.cost,
+        }]
+      : []
+  })
   return {
     id: d.ID,
     name: d.plan_name,
@@ -179,6 +225,7 @@ export function toCatalogPlan(dto: unknown): CatalogPlan {
     monthlyPriceMinor: d.month_cost,
     formattedPrice: formatCatalogPrice(d.month_cost),
     features: d.features,
+    addOns,
     learnMoreSlug: d.learn_more_slug,
   }
 }
