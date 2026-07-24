@@ -3,6 +3,7 @@
 import { useTransition } from "react"
 import Link from "next/link"
 import { logoutAction } from "@/app/actions/auth"
+import { cn } from "@/lib/utils"
 import { useUser } from "@/contexts/user-context"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -14,9 +15,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ChevronDownIcon, CircleUserRoundIcon, LogOutIcon } from "lucide-react"
+import {
+  ChevronDownIcon,
+  CircleAlertIcon,
+  CircleUserRoundIcon,
+  LogOutIcon,
+} from "lucide-react"
 
-export function NavUser() {
+export function NavUser({
+  activationIncomplete = false,
+}: {
+  /** Shows the alert dot and the "Finish setting up" entry. */
+  activationIncomplete?: boolean
+}) {
   const { customer } = useUser()
   const [pending, startTransition] = useTransition()
   const initials = `${customer.firstName[0]}${customer.lastName[0]}`
@@ -37,9 +48,29 @@ export function NavUser() {
           />
         }
       >
-        <Avatar className="size-8 rounded-lg">
-          <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-        </Avatar>
+        <span className="relative flex">
+          {/* Amber (warning), not red: this is "finish setting up", not an
+              error — and red is already the notifications dot a few px away. */}
+          <Avatar
+            className={cn(
+              "size-8 rounded-lg",
+              activationIncomplete &&
+                "ring-2 ring-warning ring-offset-2 ring-offset-background",
+            )}
+          >
+            <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+          </Avatar>
+          {activationIncomplete ? (
+            // The "!" names the reason the ring is there. Accessible name lives
+            // on the trigger (below), so this is aria-hidden — announced once.
+            <span
+              aria-hidden
+              className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-warning text-[10px] font-extrabold leading-none text-blueDarkest ring-2 ring-background"
+            >
+              !
+            </span>
+          ) : null}
+        </span>
         <div className="hidden sm:grid text-sm leading-tight">
           <span className="truncate font-medium">
             {customer.firstName} {customer.lastName}
@@ -48,6 +79,9 @@ export function NavUser() {
             {customer.email}
           </span>
         </div>
+        {activationIncomplete ? (
+          <span className="sr-only">Account setup incomplete</span>
+        ) : null}
         <ChevronDownIcon className="ml-1 size-4 opacity-70" />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-56" align="end" sideOffset={4}>
@@ -70,6 +104,12 @@ export function NavUser() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          {activationIncomplete ? (
+            <DropdownMenuItem render={<Link href="/activate" />}>
+              <CircleAlertIcon className="text-warning" />
+              Finish setting up
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem render={<Link href="/settings" />}>
             <CircleUserRoundIcon />
             Account

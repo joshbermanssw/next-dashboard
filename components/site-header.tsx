@@ -1,8 +1,10 @@
+import { Suspense } from "react"
 import Link from "next/link"
 import { SettingsIcon } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { NavUser } from "@/components/nav-user"
+import { NavUserActivation } from "@/components/nav-user-activation"
 import {
   NotificationsMenu,
   headerIconButtonClass,
@@ -30,7 +32,9 @@ export function SiteHeader() {
             orientation="vertical"
             className="mx-1 h-6 data-vertical:self-auto"
           />
-          <NavUser />
+          <Suspense fallback={<NavUser />}>
+            <NavUserActivation />
+          </Suspense>
         </div>
       </div>
     </header>
