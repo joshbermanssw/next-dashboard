@@ -125,7 +125,10 @@ function InputGroupInput({
     <Input
       data-slot="input-group-control"
       className={cn(
-        "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent",
+        // `muted-foreground` (#E2E6FF) sits almost as bright as entered text on
+        // the dark auth surfaces, so placeholders don't read as placeholders —
+        // dim them to match the field hints (blueLight/70) but a touch lower.
+        "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 placeholder:text-blueLight/40 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent",
         className
       )}
       {...props}

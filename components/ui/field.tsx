@@ -102,7 +102,6 @@ function FieldLabel({
   className,
   ...props
 }: React.ComponentProps<typeof Label>) {
-  console.log(props)
   return (
     <Label
       data-slot="field-label"
