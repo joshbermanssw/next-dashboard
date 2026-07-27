@@ -203,20 +203,68 @@ export type AccountData = {
 /** Lifecycle of a SplitPay pool: collecting → spending from the pool → wound up. */
 export type SplitPayStatus = "funding" | "spending" | "closed"
 
+/**
+ * Where one contributor stands against their own pledge. Derived from `amount`
+ * vs `pledged` (see `contributorStatus`) rather than stored, so the label and
+ * the numbers can never drift apart.
+ */
+export type ContributorStatus = "paid" | "partial" | "pending"
+
+/** A card a contributor has used before, kept for the "Payment Method" row.
+ * Only the display fragments survive — never the PAN, expiry, or CVV. */
+export type SavedCard = { brand: string; last4: string }
+
 /** One person paying into a SplitPay pool. */
 export type SplitPayContributor = {
   id: string
   name: string
   /** Avatar initial. */
   initial: string
+  /** Where the invite was sent. `null` for the creator, who is already here. */
+  email: string | null
+  /** What this person committed to put in — their personal target. */
+  pledged: number
   /** Amount this person has contributed so far, in the pool's currency. */
   amount: number
+  /** Personal due date for the outstanding balance (epoch ms), or `null`. */
+  targetDate: number | null
+  /** The pool creator. Wears the Owner badge and is authorised from the start. */
+  isCreator: boolean
+  /** Cleared by the creator to spend from the pooled card. */
+  authorised: boolean
+  /**
+   * Unguessable handle for this contributor, carried in the emailed manage link
+   * (`/splitpay/{sessionId}?c={token}`). It is what resolves a visitor who has
+   * no DosshPay session, so it is a credential: never render it in a list.
+   */
+  token: string
+  /** Card last used, shown on the manage page. `null` until they pay by card. */
+  savedCard: SavedCard | null
+}
+
+/** One payment into the pool — a row of its ledger, and the Step 3 receipt. */
+export type SplitPayContribution = {
+  /** Receipt number shown to the payer, e.g. "TXN-69420724". */
+  id: string
+  contributorId: string
+  amount: number
+  /** When it was taken (epoch ms). */
+  createdAt: number
+  status: "completed" | "pending"
 }
 
 /** The shared-funding sub-model carried only by `splitpay` accounts. */
 export type SplitPayDetails = {
+  /**
+   * Public session number ("123-455"), used in invite emails and in the public
+   * URLs (`/sp/{sessionId}`, `/splitpay/{sessionId}`). Shareable by design — on
+   * its own it grants nothing. `accessCode` is the secret that does.
+   */
+  sessionId: string
   /** Human-facing pool number shown as "Account #466793". */
   accountNumber: string
+  /** Six digits emailed to invitees; the gate on the public contribute form. */
+  accessCode: string
   /** How much needs collecting before the pool can be spent. */
   targetAmount: number
   /** How much has been collected so far (mirrors the account balance). */
@@ -226,6 +274,42 @@ export type SplitPayDetails = {
   status: SplitPayStatus
   /** Everyone paying in; the creator is seeded as the first contributor. */
   contributors: SplitPayContributor[]
+  /** Payments taken, oldest first. */
+  contributions: SplitPayContribution[]
+}
+
+/** Where a contributor stands against their own pledge. A zero pledge can never
+ * be "paid" — an invitee with nothing asked of them is still pending. */
+export function contributorStatus(c: SplitPayContributor): ContributorStatus {
+  if (c.pledged > 0 && c.amount >= c.pledged) return "paid"
+  if (c.amount > 0) return "partial"
+  return "pending"
+}
+
+/** Still owed against a pledge. Never negative — over-payers owe nothing. */
+export function stillOwed(c: SplitPayContributor): number {
+  return Math.max(0, c.pledged - c.amount)
+}
+
+/** How many contributors have met their pledge — the "2 of 6 paid" line. */
+export function paidCount(contributors: SplitPayContributor[]): number {
+  return contributors.filter((c) => contributorStatus(c) === "paid").length
+}
+
+/** Six random digits grouped as "123-455" for the public session id. */
+export function generateSessionId(): string {
+  const digits = String(Math.floor(100000 + Math.random() * 900000))
+  return `${digits.slice(0, 3)}-${digits.slice(3)}`
+}
+
+/** The six-digit code emailed to invitees and demanded by the contribute form. */
+export function generateAccessCode(): string {
+  return String(Math.floor(100000 + Math.random() * 900000))
+}
+
+/** Unguessable per-contributor handle for emailed manage links. */
+export function generateContributorToken(): string {
+  return globalThis.crypto.randomUUID().replace(/-/g, "")
 }
 
 /** Quick-select purposes on the SplitPay target step. */
@@ -752,6 +836,48 @@ const globalData: AccountData = {
  * with the signed-in customer's id (single-tenant stub). */
 export const SEED_CUSTOMER_ID = "cust-seed"
 
+/**
+ * Deadline for the demo pool: the next UTC midnight, so it is always 0–24h out
+ * and — unlike `Date.now() + 23h` — evaluates to the same number on the server
+ * and in the browser, which keeps the hydrated countdown from mismatching.
+ */
+function demoDeadline(): number {
+  const DAY_MS = 86_400_000
+  return (Math.floor(Date.now() / DAY_MS) + 1) * DAY_MS
+}
+
+/**
+ * The worked example from the SplitPay deck: $2,400 target, $1,400 collected
+ * across six contributors, two of whom have met their pledge. Mara created it;
+ * Benji is the non-DosshPay invitee whose public journey the `/sp` pages serve.
+ *
+ * Tokens and codes are fixed rather than generated so the seed is byte-identical
+ * on the server and the client — an emailed link has to resolve to the same
+ * contributor in both.
+ */
+const barcelonaTripFund: SplitPayDetails = {
+  sessionId: "123-455",
+  accountNumber: "466793",
+  accessCode: "846201",
+  targetAmount: 2_400,
+  collected: 1_400,
+  deadline: demoDeadline(),
+  status: "funding",
+  contributors: [
+    { id: "sp-mara", name: "Mara Solano", initial: "MS", email: null, pledged: 400, amount: 400, targetDate: null, isCreator: true, authorised: true, token: "seedtokenmara01", savedCard: null },
+    { id: "sp-james", name: "James Okafor", initial: "JO", email: "james@example.com", pledged: 400, amount: 200, targetDate: null, isCreator: false, authorised: false, token: "seedtokenjames1", savedCard: null },
+    { id: "sp-benji", name: "Benji", initial: "BJ", email: "benji@email.com", pledged: 400, amount: 150, targetDate: null, isCreator: false, authorised: false, token: "seedtokenbenji1", savedCard: null },
+    { id: "sp-priya", name: "Priya Nair", initial: "PN", email: "priya@example.com", pledged: 400, amount: 0, targetDate: null, isCreator: false, authorised: false, token: "seedtokenpriya1", savedCard: null },
+    { id: "sp-felix", name: "Felix Huang", initial: "FH", email: "felix@example.com", pledged: 400, amount: 400, targetDate: null, isCreator: false, authorised: true, token: "seedtokenfelix1", savedCard: null },
+    { id: "sp-camille", name: "Camille Duret", initial: "CD", email: "camille@example.com", pledged: 400, amount: 250, targetDate: null, isCreator: false, authorised: false, token: "seedtokencamille", savedCard: null },
+  ],
+  contributions: [
+    // Today's UTC midnight — same rounding as the deadline, so the rendered
+    // receipt date is stable across server and client renders too.
+    { id: "TXN-69420724", contributorId: "sp-benji", amount: 150, createdAt: demoDeadline() - 86_400_000, status: "completed" },
+  ],
+}
+
 // Each account carries its own plan segment + tier, so its card face is owned
 // per account (`accountCardDesign`): crypto → premium, everyday → standard,
 // global → business (corporate).
@@ -759,6 +885,7 @@ export const seedAccounts: Account[] = [
   { id: "crypto", customerId: SEED_CUSTOMER_ID, kind: "crypto", label: "Crypto", accountType: "everyday", tier: "PREMIUM", currency: "USDC", currencyFlag: "🇺🇸", data: cryptoData },
   { id: "everyday", customerId: SEED_CUSTOMER_ID, kind: "everyday", label: "Everyday", accountType: "everyday", tier: "STANDARD", currency: "AUD", currencyFlag: "🇦🇺", data: everydayData },
   { id: "global", customerId: SEED_CUSTOMER_ID, kind: "global", label: "Global", accountType: "corporate", tier: null, currency: "USD", currencyFlag: "🇺🇸", data: globalData },
+  { id: "splitpay", customerId: SEED_CUSTOMER_ID, kind: "splitpay", label: "Barcelona Trip Fund", accountType: "everyday", tier: "BASIC", currency: "AUD", currencyFlag: "🇦🇺", splitpay: barcelonaTripFund, data: { ...freshAccountData(), balance: barcelonaTripFund.collected } },
 ]
 
 /** Dataset for a brand-new account: $0 balance, no cards, flat money flow,
