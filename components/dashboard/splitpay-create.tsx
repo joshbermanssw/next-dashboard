@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
+import { registerSessionAction } from "@/app/actions/splitpay"
 import { Button } from "@/components/ui/button"
 import { useAccounts } from "@/contexts/accounts-context"
 import {
@@ -89,12 +90,22 @@ export function SplitPayCreate({ onDone }: { onDone: () => void }) {
       mode === "from-now"
         ? Date.now() + (resolvedHours as number) * HOUR_MS
         : specificMs
-    addSplitPayAccount({
+    const account = addSplitPayAccount({
       name: name.trim(),
       targetAmount: amountValue,
       currencyCode: currency,
       deadline,
     })
+    // Mirror the new pool into the server store so its public contributor pages
+    // resolve. Fire-and-forget: the pool already exists in client state, and the
+    // hub falls back to that copy if this never lands.
+    if (account.splitpay) {
+      void registerSessionAction({
+        accountId: account.id,
+        label: account.label,
+        details: account.splitpay,
+      })
+    }
     onDone()
   }
 

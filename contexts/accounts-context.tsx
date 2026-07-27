@@ -11,6 +11,9 @@ import {
 import {
   accountKindMeta,
   freshAccountData,
+  generateAccessCode,
+  generateContributorToken,
+  generateSessionId,
   AUD_CURRENCY,
   CURRENCY_BY_CODE,
   SEED_CUSTOMER_ID,
@@ -30,18 +33,14 @@ type AccountsContextValue = {
    * for kinds without a currency step). Selects the new account. */
   addAccount: (kind: AccountKind, currencyCode?: string) => void
   /** Create a SplitPay pool from the wizard input. Label is the pool name.
-   * Selects the new account. */
+   * Selects the new account and returns it, so the caller can mirror it into
+   * the server store (which is what makes its public `/sp` pages resolve). */
   addSplitPayAccount: (input: {
     name: string
     targetAmount: number
     currencyCode: string
     deadline: number
-  }) => void
-  /** Add `amount` to a SplitPay pool's collected total and the caller's
-   * contribution. No-op if the account isn't a SplitPay pool. */
-  topUpSplitPay: (accountId: string, amount: number) => void
-  /** Move a SplitPay pool from funding to spending. No-op otherwise. */
-  startSpending: (accountId: string) => void
+  }) => Account
   /** O(1) lookup of an account by id. */
   getAccount: (id: string) => Account | undefined
   /** O(1) lookup of a card (and its owning account) by id, scoped to an account. */
@@ -53,12 +52,45 @@ type AccountsContextValue = {
 
 const AccountsContext = createContext<AccountsContextValue | null>(null)
 
-export function AccountsProvider({ children }: { children: React.ReactNode }) {
+/** A pool as the server store currently holds it, handed down at mount. */
+export type SeedSplitPaySession = {
+  accountId: string
+  details: SplitPayDetails
+}
+
+export function AccountsProvider({
+  children,
+  splitpaySessions = [],
+}: {
+  children: React.ReactNode
+  /**
+   * Live SplitPay pools read server-side (see the dashboard layout). Without
+   * these the provider would seed from the static seed and show stale money the
+   * moment a contributor paid in from an invite email — the dashboard tile and
+   * the hub would disagree about the same pool.
+   */
+  splitpaySessions?: SeedSplitPaySession[]
+}) {
   const { customer } = useUser()
-  // Seeded once, through the same accessor the server routes use.
-  const [accounts, setAccounts] = useState<Account[]>(() =>
-    getAccountsForCustomer(customer.id)
-  )
+  // Seeded once, through the same accessor the server routes use, with any
+  // live pool state layered over the static seed.
+  const [accounts, setAccounts] = useState<Account[]>(() => {
+    const seeded = getAccountsForCustomer(customer.id)
+    if (splitpaySessions.length === 0) return seeded
+
+    const byAccount = new Map(splitpaySessions.map((s) => [s.accountId, s.details]))
+    return seeded.map((account) => {
+      const splitpay = byAccount.get(account.id)
+      if (!splitpay) return account
+      // The pool's collected total *is* the account balance for a SplitPay
+      // account, so they move together.
+      return {
+        ...account,
+        splitpay,
+        data: { ...account.data, balance: splitpay.collected },
+      }
+    })
+  })
   const [selectedId, setSelectedId] = useState(accounts[0]?.id ?? "")
   const nextId = useRef(0)
 
@@ -122,7 +154,9 @@ export function AccountsProvider({ children }: { children: React.ReactNode }) {
         CURRENCY_BY_CODE[input.currencyCode] || AUD_CURRENCY
       const initial = (customer.firstName?.[0] ?? "M").toUpperCase()
       const splitpay: SplitPayDetails = {
+        sessionId: generateSessionId(),
         accountNumber: String(Math.floor(100000 + Math.random() * 900000)),
+        accessCode: generateAccessCode(),
         targetAmount: input.targetAmount,
         collected: 0,
         deadline: input.deadline,
@@ -132,63 +166,38 @@ export function AccountsProvider({ children }: { children: React.ReactNode }) {
             id: customer.id || SEED_CUSTOMER_ID,
             name: customer.firstName || "You",
             initial,
+            email: null,
+            // The creator's own share is theirs to set later; the pool target is
+            // the group's number, not one person's pledge.
+            pledged: 0,
             amount: 0,
+            targetDate: null,
+            isCreator: true,
+            authorised: true,
+            token: generateContributorToken(),
+            savedCard: null,
           },
         ],
+        contributions: [],
       }
-      setAccounts((prev) => [
-        ...prev,
-        {
-          id,
-          customerId: customer.id || SEED_CUSTOMER_ID,
-          kind: "splitpay",
-          label: input.name,
-          accountType: "everyday",
-          tier: "BASIC",
-          currency: currency.code,
-          currencyFlag: currency.flag,
-          splitpay,
-          data: freshAccountData(),
-        },
-      ])
+      const account: Account = {
+        id,
+        customerId: customer.id || SEED_CUSTOMER_ID,
+        kind: "splitpay",
+        label: input.name,
+        accountType: "everyday",
+        tier: "BASIC",
+        currency: currency.code,
+        currencyFlag: currency.flag,
+        splitpay,
+        data: freshAccountData(),
+      }
+      setAccounts((prev) => [...prev, account])
       setSelectedId(id)
+      return account
     },
     [customer.id, customer.firstName]
   )
-
-  const topUpSplitPay = useCallback(
-    (accountId: string, amount: number) => {
-      if (!(amount > 0)) return
-      setAccounts((prev) =>
-        prev.map((a) => {
-          if (a.id !== accountId || !a.splitpay) return a
-          const meId = customer.id || SEED_CUSTOMER_ID
-          return {
-            ...a,
-            data: { ...a.data, balance: a.splitpay.collected + amount },
-            splitpay: {
-              ...a.splitpay,
-              collected: a.splitpay.collected + amount,
-              contributors: a.splitpay.contributors.map((c) =>
-                c.id === meId ? { ...c, amount: c.amount + amount } : c
-              ),
-            },
-          }
-        })
-      )
-    },
-    [customer.id]
-  )
-
-  const startSpending = useCallback((accountId: string) => {
-    setAccounts((prev) =>
-      prev.map((a) =>
-        a.id === accountId && a.splitpay?.status === "funding"
-          ? { ...a, splitpay: { ...a.splitpay, status: "spending" } }
-          : a
-      )
-    )
-  }, [])
 
   const getAccount = useCallback(
     (id: string) => accountIndex.get(id),
@@ -209,8 +218,6 @@ export function AccountsProvider({ children }: { children: React.ReactNode }) {
       selectAccount,
       addAccount,
       addSplitPayAccount,
-      topUpSplitPay,
-      startSpending,
       getAccount,
       getCard,
     }),
@@ -220,8 +227,6 @@ export function AccountsProvider({ children }: { children: React.ReactNode }) {
       selectAccount,
       addAccount,
       addSplitPayAccount,
-      topUpSplitPay,
-      startSpending,
       getAccount,
       getCard,
     ]

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ChevronLeftIcon,
   ClockIcon,
@@ -12,11 +13,14 @@ import {
   CreditCardIcon,
 } from "lucide-react"
 
+import { creatorTopUpAction, startSpendingAction } from "@/app/actions/splitpay"
 import { useAccounts } from "@/contexts/accounts-context"
-import { useUser } from "@/contexts/user-context"
 import { useCountdown } from "@/hooks/use-countdown"
 import { Panel } from "@/components/ui/panel"
-import { Avatars, ProgressBar } from "@/components/dashboard/splitpay-overview"
+import { ProgressBar } from "@/components/dashboard/splitpay-overview"
+import { ContributorRoster } from "@/components/splitpay/contributor-roster"
+import { InvitePanel, TargetPanel } from "@/components/splitpay/hub-panels"
+import { toCreatorSession, type CreatorSession } from "@/lib/splitpay"
 import type { SplitPayStatus } from "@/lib/dashboard-data"
 import { formatCurrency, cn } from "@/lib/utils"
 
@@ -27,18 +31,39 @@ const STATUS_LABEL: Record<SplitPayStatus, string> = {
   closed: "Closed",
 }
 
-export function SplitPayHub({ accountId }: { accountId: string }) {
-  const { accounts, topUpSplitPay, startSpending } = useAccounts()
-  const { customer } = useUser()
-  const [topUpOpen, setTopUpOpen] = React.useState(false)
-  const [topUpValue, setTopUpValue] = React.useState("")
+type HubPanel = "target" | "topup" | "invite" | "contributors"
+
+export function SplitPayHub({
+  accountId,
+  session: serverSession,
+  initialCountdown,
+}: {
+  accountId: string
+  /**
+   * The pool as the server store knows it — the same record the public `/sp`
+   * pages read and write, so a stranger's contribution shows up here. `null`
+   * for a pool that only exists in client state (created this session, or the
+   * store restarted), in which case we fall back to the context copy and the
+   * creator-side actions have nothing to talk to.
+   */
+  session: CreatorSession | null
+  initialCountdown?: string
+}) {
+  const router = useRouter()
+  const { accounts } = useAccounts()
+  const [panel, setPanel] = React.useState<HubPanel | null>(null)
 
   const account = accounts.find((a) => a.id === accountId)
-  const splitpay = account?.splitpay
+  const fallback = React.useMemo(
+    () =>
+      account?.splitpay ? toCreatorSession(account.splitpay, account.label) : null,
+    [account]
+  )
+  const session = serverSession ?? fallback
 
-  const countdown = useCountdown(splitpay?.deadline ?? 0)
+  const countdown = useCountdown(session?.deadline ?? 0, initialCountdown)
 
-  if (!account || !splitpay) {
+  if (!session) {
     return (
       <Panel className="flex flex-col items-start gap-3 p-6">
         <p className="text-base font-medium text-blueLightest">
@@ -57,21 +82,12 @@ export function SplitPayHub({ accountId }: { accountId: string }) {
     )
   }
 
-  const { collected, targetAmount, status, contributors } = splitpay
-  const pct = targetAmount > 0 ? Math.min(100, (collected / targetAmount) * 100) : 0
-  const remaining = Math.max(0, targetAmount - collected)
-  const mine =
-    contributors.find((c) => c.id === customer.id)?.amount ??
-    contributors[0]?.amount ??
-    0
+  const { collected, targetAmount, status, remaining, pct } = session
+  const mine = session.contributors.find((c) => c.isCreator)?.amount ?? 0
   const [dollars, cents] = formatCurrency(collected, { cents: true }).split(".")
-
-  function confirmTopUp() {
-    const amount = Number(topUpValue)
-    if (amount > 0) topUpSplitPay(account!.id, amount)
-    setTopUpValue("")
-    setTopUpOpen(false)
-  }
+  // Creator-side controls need a server record to act on; the context fallback
+  // has no counterpart in the store.
+  const live = serverSession !== null
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
@@ -137,21 +153,18 @@ export function SplitPayHub({ accountId }: { accountId: string }) {
           </span>
         </div>
 
-        <div className="grid w-full grid-cols-2 border-t border-panel-border pt-4">
-          <div className="flex flex-col items-center gap-1 border-r border-panel-border">
-            <span className="text-xs text-muted-foreground">My contribution</span>
-            <span className="text-lg font-semibold text-foreground">
-              {formatCurrency(mine)}
-            </span>
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-xs text-muted-foreground">
-              Remaining to target
-            </span>
-            <span className="text-lg font-semibold text-accentBlue">
-              {formatCurrency(remaining)}
-            </span>
-          </div>
+        <div className="grid w-full grid-cols-3 border-t border-panel-border pt-4">
+          <HubStat label="My contribution" value={formatCurrency(mine)} />
+          <HubStat
+            label="Remaining"
+            value={formatCurrency(remaining)}
+            valueClass="text-accentBlue"
+            bordered
+          />
+          <HubStat
+            label="Paid"
+            value={`${session.paidCount} of ${session.contributorCount}`}
+          />
         </div>
       </Panel>
 
@@ -163,45 +176,64 @@ export function SplitPayHub({ accountId }: { accountId: string }) {
       </div>
 
       <div className="grid grid-cols-4 gap-2">
-        <HubAction icon={CircleCheckIcon} label="Target" />
+        <HubAction
+          icon={CircleCheckIcon}
+          label="Target"
+          active={panel === "target"}
+          onClick={() => togglePanel("target")}
+        />
         <HubAction
           icon={WalletIcon}
           label="Top up"
-          active={topUpOpen}
-          onClick={() => setTopUpOpen((v) => !v)}
+          active={panel === "topup"}
+          onClick={() => togglePanel("topup")}
         />
-        <HubAction icon={AtSignIcon} label="Invite" />
-        <HubAction icon={UsersIcon} label="Contributors" />
+        <HubAction
+          icon={AtSignIcon}
+          label="Invite"
+          active={panel === "invite"}
+          onClick={() => togglePanel("invite")}
+        />
+        <HubAction
+          icon={UsersIcon}
+          label="Contributors"
+          active={panel === "contributors"}
+          onClick={() => togglePanel("contributors")}
+        />
       </div>
 
-      {topUpOpen ? (
-        <div className="flex items-center gap-2">
-          <input
-            autoFocus
-            inputMode="decimal"
-            value={topUpValue}
-            onChange={(e) => setTopUpValue(e.target.value.replace(/[^0-9.]/g, ""))}
-            placeholder="Amount to add"
-            className="min-w-0 flex-1 rounded-xl border border-panel-border bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-accentBlue focus-visible:outline-none"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") confirmTopUp()
-            }}
-          />
-          <button
-            type="button"
-            onClick={confirmTopUp}
-            className="rounded-xl bg-accentBlue px-5 py-3 text-sm font-bold text-blue transition-colors hover:bg-accentBlueHover"
-          >
-            Add
-          </button>
-        </div>
+      {!live && panel !== null ? (
+        <p className="rounded-xl border border-warning/30 bg-warning/[0.08] px-4 py-3 text-xs text-warning">
+          This pool isn&apos;t registered with the server yet, so invites and
+          authorisation are unavailable. Reload the dashboard to re-register it.
+        </p>
+      ) : null}
+
+      {panel === "target" ? <TargetPanel session={session} /> : null}
+      {panel === "topup" ? (
+        <TopUpPanel accountId={accountId} disabled={!live} />
+      ) : null}
+      {panel === "invite" && live ? (
+        <InvitePanel accountId={accountId} session={session} />
+      ) : null}
+      {panel === "contributors" ? (
+        <ContributorRoster
+          contributors={session.contributors}
+          targetAmount={targetAmount}
+          collected={collected}
+          viewerId={session.contributors.find((c) => c.isCreator)?.id}
+          authority={live ? { kind: "hub", accountId } : { kind: "none" }}
+        />
       ) : null}
 
       {status === "funding" ? (
         <button
           type="button"
-          onClick={() => startSpending(account.id)}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-positive px-4 py-4 text-base font-bold text-blue shadow-[0_0_40px_-12px] shadow-positive transition-opacity hover:opacity-90"
+          disabled={!live}
+          onClick={() => {
+            startSpendingAction({ accountId }).then(() => router.refresh())
+          }}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-positive px-4 py-4 text-base font-bold text-blue shadow-[0_0_40px_-12px] shadow-positive transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           <CreditCardIcon className="size-5" />
           Start Spending
@@ -220,11 +252,9 @@ export function SplitPayHub({ accountId }: { accountId: string }) {
             {STATUS_LABEL[status]}
           </span>
           <div className="text-right">
-            <p className="text-sm font-semibold text-foreground">
-              {account.label}
-            </p>
+            <p className="text-sm font-semibold text-foreground">{session.label}</p>
             <p className="text-xs text-muted-foreground">
-              #{splitpay.accountNumber}
+              #{session.accountNumber} · Session {session.sessionId}
             </p>
           </div>
         </div>
@@ -242,10 +272,19 @@ export function SplitPayHub({ accountId }: { accountId: string }) {
         <ProgressBar pct={pct} />
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Avatars contributors={contributors} />
+            <div className="flex -space-x-2">
+              {session.contributors.slice(0, 4).map((c) => (
+                <span
+                  key={c.id}
+                  className="grid size-7 place-items-center rounded-full border-2 border-background bg-accentBlue/80 text-xs font-semibold text-white"
+                >
+                  {c.initial}
+                </span>
+              ))}
+            </div>
             <span className="text-sm text-muted-foreground">
-              {contributors.length}{" "}
-              {contributors.length === 1 ? "person" : "people"}
+              {session.contributorCount}{" "}
+              {session.contributorCount === 1 ? "person" : "people"}
             </span>
           </div>
           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -254,6 +293,99 @@ export function SplitPayHub({ accountId }: { accountId: string }) {
           </span>
         </div>
       </div>
+    </div>
+  )
+
+  function togglePanel(next: HubPanel) {
+    setPanel((current) => (current === next ? null : next))
+  }
+}
+
+/** The creator adding their own money, drawn from their DosshPay balance —
+ * no card, unlike the public contributor flow. */
+function TopUpPanel({
+  accountId,
+  disabled,
+}: {
+  accountId: string
+  disabled: boolean
+}) {
+  const router = useRouter()
+  const [pending, startTransition] = React.useTransition()
+  const [value, setValue] = React.useState("")
+  const [error, setError] = React.useState<string | null>(null)
+
+  function confirm() {
+    setError(null)
+    startTransition(async () => {
+      const result = await creatorTopUpAction({
+        accountId,
+        amount: Number(value),
+      })
+      if (!result.ok) {
+        setError(result.message)
+        return
+      }
+      setValue("")
+      router.refresh()
+    })
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <input
+          autoFocus
+          inputMode="decimal"
+          value={value}
+          disabled={disabled || pending}
+          onChange={(e) => setValue(e.target.value.replace(/[^0-9.]/g, ""))}
+          placeholder="Amount to add"
+          className="min-w-0 flex-1 rounded-xl border border-panel-border bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-accentBlue focus-visible:outline-none disabled:opacity-50"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") confirm()
+          }}
+        />
+        <button
+          type="button"
+          onClick={confirm}
+          disabled={disabled || pending}
+          className="rounded-xl bg-accentBlue px-5 py-3 text-sm font-bold text-blue transition-colors hover:bg-accentBlueHover disabled:opacity-50"
+        >
+          {pending ? "…" : "Add"}
+        </button>
+      </div>
+      {error ? (
+        <p role="alert" className="text-xs text-negative">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+function HubStat({
+  label,
+  value,
+  valueClass,
+  bordered,
+}: {
+  label: string
+  value: string
+  valueClass?: string
+  bordered?: boolean
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col items-center gap-1",
+        bordered && "border-x border-panel-border"
+      )}
+    >
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className={cn("text-lg font-semibold text-foreground", valueClass)}>
+        {value}
+      </span>
     </div>
   )
 }
