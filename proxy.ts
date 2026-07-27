@@ -7,7 +7,20 @@ import {
   type Session,
 } from "@/server/auth/session-token"
 
-const publicRoutes = ["/login", "/forgot-password", "/reset-password", "/signup"]
+/** Pages for people who aren't signed in yet. Reaching one *with* a session
+ * means you're already past them, so you get bounced to the dashboard. */
+const authRoutes = ["/login", "/forgot-password", "/reset-password", "/signup"]
+
+/**
+ * Open to everyone, signed in or not — the public SplitPay contributor flow and
+ * the dev mock inbox that links into it.
+ *
+ * These deliberately escape *both* redirects. Invitees arrive from an email, and
+ * the deck's worked example has three of five contributors already holding
+ * DosshPay accounts: bouncing a signed-in visitor to `/` would break the link
+ * for exactly the people most likely to click it.
+ */
+const openPrefixes = ["/sp/", "/splitpay/", "/dev/"]
 
 // Refresh the access token once it's within this window of expiry, so it's renewed
 // slightly ahead of time rather than only after a request has already failed.
@@ -16,7 +29,14 @@ const REFRESH_TIMEOUT_MS = 4000
 
 export async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname
-  const isPublic = publicRoutes.includes(path)
+
+  // Open routes need no session and must never be redirected, so answer before
+  // anything else — including the refresh below, which they have no use for.
+  if (openPrefixes.some((prefix) => path.startsWith(prefix))) {
+    return NextResponse.next()
+  }
+
+  const isPublic = authRoutes.includes(path)
 
   // Decrypt (not just existence-check) so we can read token expiry and refresh.
   // The canonical secure gate is still dal.verifySession() inside pages/actions —
