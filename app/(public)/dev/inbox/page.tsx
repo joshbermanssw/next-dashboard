@@ -115,7 +115,7 @@ export default async function MockInboxPage() {
                 </dl>
 
                 <EmailButton
-                  href={`/splitpay/${details.sessionId}?c=${c.token}`}
+                  href={`/sp/${details.sessionId}/manage?c=${c.token}`}
                 >
                   View &amp; Update My Contribution
                 </EmailButton>

@@ -35,7 +35,7 @@ export function ClaimGate({ sessionId }: { sessionId: string }) {
         setMessage(result.errors ? null : result.message)
         return
       }
-      router.replace(`/splitpay/${sessionId}?c=${result.value.token}`)
+      router.replace(`/sp/${sessionId}/manage?c=${result.value.token}`)
     })
   }
 

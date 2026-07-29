@@ -14,6 +14,10 @@ import { toPublicSession, toViewerContribution } from "@/lib/splitpay"
 /**
  * Step 5 — "View & Update My Contribution" from the follow-up email.
  *
+ * Nested under `/sp/{sessionId}` rather than living at its own root: it is the
+ * same session as the pay page, so it belongs in the same namespace, alongside
+ * `receipt/{txId}`. One session, one path.
+ *
  * `?c=` carries the contributor's manage token; it is the only thing that
  * identifies the visitor, since they may have no DosshPay account. Without a
  * resolving token the page falls back to the code + name gate rather than

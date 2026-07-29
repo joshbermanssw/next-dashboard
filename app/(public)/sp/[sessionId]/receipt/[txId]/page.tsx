@@ -71,7 +71,7 @@ export default async function ReceiptPage({
         </dl>
 
         <Link
-          href={`/splitpay/${details.sessionId}`}
+          href={`/sp/${details.sessionId}/manage`}
           className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-panel-border bg-white/5 px-4 py-3 text-sm font-medium text-blueLight transition-colors hover:bg-white/10"
         >
           View my contribution

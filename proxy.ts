@@ -20,7 +20,7 @@ const authRoutes = ["/login", "/forgot-password", "/reset-password", "/signup"]
  * DosshPay accounts: bouncing a signed-in visitor to `/` would break the link
  * for exactly the people most likely to click it.
  */
-const openPrefixes = ["/sp/", "/splitpay/", "/dev/"]
+const openPrefixes = ["/sp/", "/dev/"]
 
 // Refresh the access token once it's within this window of expiry, so it's renewed
 // slightly ahead of time rather than only after a request has already failed.
