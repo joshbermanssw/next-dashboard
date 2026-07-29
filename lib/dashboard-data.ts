@@ -222,6 +222,14 @@ export type SplitPayContributor = {
   initial: string
   /** Where the invite was sent. `null` for the creator, who is already here. */
   email: string | null
+  /**
+   * The DosshPay customer behind this row, or `null` for a contributor with no
+   * account. The deck splits a session's contributors into existing DosshPay
+   * users and non-users; this is that distinction, and it is what lets a
+   * signed-in contributor be resolved from their session instead of a name they
+   * type in. Bound at first contribution by matching the invite email.
+   */
+  customerId: string | null
   /** What this person committed to put in — their personal target. */
   pledged: number
   /** Amount this person has contributed so far, in the pool's currency. */
@@ -234,7 +242,7 @@ export type SplitPayContributor = {
   authorised: boolean
   /**
    * Unguessable handle for this contributor, carried in the emailed manage link
-   * (`/splitpay/{sessionId}?c={token}`). It is what resolves a visitor who has
+   * (`/sp/{sessionId}/manage?c={token}`). It is what resolves a visitor who has
    * no DosshPay session, so it is a credential: never render it in a list.
    */
   token: string
@@ -257,7 +265,7 @@ export type SplitPayContribution = {
 export type SplitPayDetails = {
   /**
    * Public session number ("123-455"), used in invite emails and in the public
-   * URLs (`/sp/{sessionId}`, `/splitpay/{sessionId}`). Shareable by design — on
+   * URLs (`/sp/{sessionId}` and below). Shareable by design — on
    * its own it grants nothing. `accessCode` is the secret that does.
    */
   sessionId: string
@@ -300,11 +308,6 @@ export function paidCount(contributors: SplitPayContributor[]): number {
 export function generateSessionId(): string {
   const digits = String(Math.floor(100000 + Math.random() * 900000))
   return `${digits.slice(0, 3)}-${digits.slice(3)}`
-}
-
-/** The six-digit code emailed to invitees and demanded by the contribute form. */
-export function generateAccessCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000))
 }
 
 /** Unguessable per-contributor handle for emailed manage links. */
@@ -864,12 +867,12 @@ const barcelonaTripFund: SplitPayDetails = {
   deadline: demoDeadline(),
   status: "funding",
   contributors: [
-    { id: "sp-mara", name: "Mara Solano", initial: "MS", email: null, pledged: 400, amount: 400, targetDate: null, isCreator: true, authorised: true, token: "seedtokenmara01", savedCard: null },
-    { id: "sp-james", name: "James Okafor", initial: "JO", email: "james@example.com", pledged: 400, amount: 200, targetDate: null, isCreator: false, authorised: false, token: "seedtokenjames1", savedCard: null },
-    { id: "sp-benji", name: "Benji", initial: "BJ", email: "benji@email.com", pledged: 400, amount: 150, targetDate: null, isCreator: false, authorised: false, token: "seedtokenbenji1", savedCard: null },
-    { id: "sp-priya", name: "Priya Nair", initial: "PN", email: "priya@example.com", pledged: 400, amount: 0, targetDate: null, isCreator: false, authorised: false, token: "seedtokenpriya1", savedCard: null },
-    { id: "sp-felix", name: "Felix Huang", initial: "FH", email: "felix@example.com", pledged: 400, amount: 400, targetDate: null, isCreator: false, authorised: true, token: "seedtokenfelix1", savedCard: null },
-    { id: "sp-camille", name: "Camille Duret", initial: "CD", email: "camille@example.com", pledged: 400, amount: 250, targetDate: null, isCreator: false, authorised: false, token: "seedtokencamille", savedCard: null },
+    { id: "sp-mara", name: "Mara Solano", initial: "MS", email: null, customerId: SEED_CUSTOMER_ID, pledged: 400, amount: 400, targetDate: null, isCreator: true, authorised: true, token: "seedtokenmara01", savedCard: null },
+    { id: "sp-james", name: "James Okafor", initial: "JO", email: "james@example.com", customerId: "cust-james", pledged: 400, amount: 200, targetDate: null, isCreator: false, authorised: false, token: "seedtokenjames1", savedCard: null },
+    { id: "sp-benji", name: "Benji", initial: "BJ", email: "benji@email.com", customerId: null, pledged: 400, amount: 150, targetDate: null, isCreator: false, authorised: false, token: "seedtokenbenji1", savedCard: null },
+    { id: "sp-priya", name: "Priya Nair", initial: "PN", email: "priya@example.com", customerId: null, pledged: 400, amount: 0, targetDate: null, isCreator: false, authorised: false, token: "seedtokenpriya1", savedCard: null },
+    { id: "sp-felix", name: "Felix Huang", initial: "FH", email: "felix@example.com", customerId: "cust-felix", pledged: 400, amount: 400, targetDate: null, isCreator: false, authorised: true, token: "seedtokenfelix1", savedCard: null },
+    { id: "sp-camille", name: "Camille Duret", initial: "CD", email: "camille@example.com", customerId: null, pledged: 400, amount: 250, targetDate: null, isCreator: false, authorised: false, token: "seedtokencamille", savedCard: null },
   ],
   contributions: [
     // Today's UTC midnight — same rounding as the deadline, so the rendered

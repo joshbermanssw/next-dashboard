@@ -24,12 +24,16 @@ import {
   recordContribution,
   recordCreatorTopUp,
   recordPaymentFromToken,
+  recordUserContribution,
   registerSession,
   setAuthorised,
   startSpending,
   updatePledge,
 } from "@/lib/data/splitpay"
+import { getAccount, getAccountsForCustomer } from "@/lib/data/accounts"
+import { balanceOf, debit } from "@/lib/data/balances"
 import {
+  ContributeAsUserSchema,
   ContributeSchema,
   InviteSchema,
   PayDifferenceSchema,
@@ -60,7 +64,7 @@ function invalid(message: string, errors?: Record<string, string>): ActionFailur
  * a stranger pays in. */
 function revalidateSession(sessionId: string, accountId?: string): void {
   revalidatePath(`/sp/${sessionId}`)
-  revalidatePath(`/splitpay/${sessionId}`)
+  revalidatePath(`/sp/${sessionId}/manage`)
   if (accountId) revalidatePath(`/account/${accountId}/splitpay`)
   revalidatePath("/")
 }
@@ -71,6 +75,7 @@ function revalidateSession(sessionId: string, accountId?: string): void {
 export async function contributeAction(input: {
   sessionId: string
   name: string
+  email: string
   code: string
   amount: number
   cardNumber: string
@@ -87,6 +92,7 @@ export async function contributeAction(input: {
     sessionId: input.sessionId,
     code: parsed.data.code,
     name: parsed.data.name,
+    email: parsed.data.email,
     amount: parsed.data.amount,
     cardNumber: parsed.data.cardNumber,
   })
@@ -103,8 +109,99 @@ export async function contributeAction(input: {
 }
 
 /**
+ * Step 2 for an existing DosshPay customer — funded from one of their accounts
+ * instead of a card.
+ *
+ * Signed in, so it verifies a session, but it is not a *creator* action: any
+ * customer holding the emailed code may contribute to any session. What the
+ * session buys them is identity (no typed name to be matched against a roster)
+ * and a funding source, not authority over the pool.
+ */
+export async function contributeAsUserAction(input: {
+  sessionId: string
+  code: string
+  accountId: string
+  amount: number
+  acceptedTerms: boolean
+}): Promise<ActionResult<{ transactionId: string }>> {
+  const { customer } = await verifySession()
+
+  const parsed = ContributeAsUserSchema.safeParse(input)
+  if (!parsed.success) {
+    return invalid("Check the highlighted fields.", fieldErrors(parsed.error))
+  }
+  if (!input.acceptedTerms) {
+    return invalid("Check the highlighted fields.", {
+      acceptedTerms: "Please accept the terms to continue.",
+    })
+  }
+
+  const session = getSession(input.sessionId)
+  if (!session) return invalid("That SplitPay session no longer exists.")
+
+  // Ownership, not just existence: without this any signed-in customer could
+  // name an account id and spend from it.
+  const account = getAccountsForCustomer(customer.id).find(
+    (a) => a.id === parsed.data.accountId,
+  )
+  if (!account) {
+    return invalid("Choose an account to pay from.", {
+      accountId: "We couldn't find that account.",
+    })
+  }
+  if (account.id === session.accountId) {
+    return invalid("That's the pool itself.", {
+      accountId: "Pick a different account to fund from.",
+    })
+  }
+  // No implicit FX. Converting silently would make the debit and the credit
+  // disagree by the spread, and nobody asked for a rate.
+  if (account.currency !== poolCurrency(session.accountId)) {
+    return invalid("Currency mismatch.", {
+      accountId: `This pool collects in ${poolCurrency(session.accountId)}.`,
+    })
+  }
+
+  const balance = balanceOf(account.id)
+  if (balance === null || balance < parsed.data.amount) {
+    return invalid("That's more than this account holds.", {
+      amount: "That's more than this account holds.",
+    })
+  }
+
+  const result = recordUserContribution({
+    sessionId: input.sessionId,
+    code: parsed.data.code,
+    customer: {
+      id: customer.id,
+      email: customer.email ?? null,
+      name: `${customer.firstName ?? ""} ${customer.lastName ?? ""}`.trim() || "You",
+    },
+    amount: parsed.data.amount,
+  })
+  if (!result.ok) {
+    const errors = result.message.includes("code") ? { code: result.message } : undefined
+    return invalid(result.message, errors)
+  }
+
+  // Debit *after* the pool credit, and for the amount actually applied — a
+  // contribution that overshoots the target is clamped, and the customer should
+  // only ever be charged what landed. Checked against the balance above, so
+  // this cannot overdraw.
+  debit(account.id, result.value.contribution.amount)
+
+  revalidateSession(input.sessionId, session.accountId)
+  return { ok: true, value: { transactionId: result.value.contribution.id } }
+}
+
+/** The currency a pool collects in — its owning account's. */
+function poolCurrency(accountId: string): string {
+  return getAccount(accountId)?.currency ?? "AUD"
+}
+
+/**
  * Recover a manage-link token from the access code plus the payer's own name —
- * the fallback for someone who reaches `/splitpay/{id}` without the emailed
+ * the fallback for someone who reaches `/sp/{id}/manage` without the emailed
  * link (they clicked through from a receipt, or the token went stale).
  *
  * Both factors are required, and the roster is never listed for them to pick
@@ -291,7 +388,7 @@ export async function inviteContributorAction(input: {
     value: {
       name: result.value.name,
       joinPath: `/sp/${sessionId}`,
-      managePath: `/splitpay/${sessionId}?c=${result.value.token}`,
+      managePath: `/sp/${sessionId}/manage?c=${result.value.token}`,
       accessCode,
     },
   }

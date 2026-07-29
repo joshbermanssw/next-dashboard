@@ -32,6 +32,7 @@ function contributor(over: Partial<SplitPayContributor> = {}): SplitPayContribut
     name: "Test Person",
     initial: "TP",
     email: "t@example.com",
+    customerId: null,
     pledged: 100,
     amount: 0,
     targetDate: null,
@@ -161,6 +162,7 @@ describe("public projections", () => {
 describe("schemas", () => {
   const valid = {
     name: "Benji",
+    email: "benji@email.com",
     code: "846201",
     amount: 150,
     cardNumber: "4242 4242 4242 4242",
@@ -226,11 +228,16 @@ describe("schemas", () => {
   })
 
   it("reports one error per field, in field order", () => {
-    const parsed = ContributeSchema.safeParse({ ...valid, name: "", code: "1" })
+    const parsed = ContributeSchema.safeParse({
+      ...valid,
+      name: "",
+      email: "not-an-email",
+      code: "1",
+    })
     expect(parsed.success).toBe(false)
     if (!parsed.success) {
       const errors = fieldErrors(parsed.error)
-      expect(Object.keys(errors)).toEqual(["name", "code"])
+      expect(Object.keys(errors)).toEqual(["name", "email", "code"])
     }
   })
 })

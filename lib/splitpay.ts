@@ -96,6 +96,9 @@ export const ContributeSchema = z.object({
     .trim()
     .min(2, { error: "Enter your name." })
     .max(60, { error: "That name is too long." }),
+  /** Taken at face value — nothing is checked against a roster. It labels the
+   * contributor row and addresses the receipt. */
+  email: z.email({ error: "Enter a valid email address." }),
   code: z
     .string()
     .trim()
@@ -113,6 +116,24 @@ export type ContributeInput = z.infer<typeof ContributeSchema>
 
 /** Step 5 — a contributor revising their pledge. Money is deliberately absent:
  * `amount` is the ledger, and only a payment moves it. */
+/**
+ * Step 2 for someone who already banks with DosshPay: the emailed code still
+ * gates entry, but identity comes from the session and the money comes from one
+ * of their accounts, so there is no name to type and no card to key in.
+ */
+export const ContributeAsUserSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, { error: "Enter the 6-digit code from your email." }),
+  accountId: z.string().trim().min(1, { error: "Choose an account to pay from." }),
+  amount: z
+    .number({ error: "Enter an amount." })
+    .positive({ error: "Enter an amount greater than zero." })
+    .finite({ error: "Enter an amount." }),
+})
+export type ContributeAsUserInput = z.infer<typeof ContributeAsUserSchema>
+
 export const UpdatePledgeSchema = z.object({
   pledged: z
     .number({ error: "Enter a pledge amount." })
@@ -178,6 +199,13 @@ export type PublicContributor = {
   status: ContributorStatus
   isCreator: boolean
   authorised: boolean
+  /**
+   * Whether this row belongs to a DosshPay customer — the deck's split of a
+   * session into existing users and non-users. A boolean rather than the
+   * customer id: the roster is a public surface, and which customer someone is
+   * is not the roster's business.
+   */
+  hasAccount: boolean
 }
 
 /** A session as a public page may see it. `accessCode` is deliberately absent:
@@ -223,6 +251,7 @@ export function toPublicContributor(c: SplitPayContributor): PublicContributor {
     status: contributorStatus(c),
     isCreator: c.isCreator,
     authorised: c.authorised,
+    hasAccount: c.customerId !== null,
   }
 }
 

@@ -110,19 +110,23 @@ export function registerSession(session: StoredSession): void {
 /* -------------------------------------------------------------- mutations */
 
 /**
- * Take a payment into the pool.
+ * Take a card payment into the pool from someone with no DosshPay account.
  *
- * The payer is matched to an existing contributor by name, case-insensitively,
- * so an invitee who pays the amount they were asked for lands on their own row
- * rather than creating a duplicate. That is the direct consequence of a
- * session-wide access code plus a self-declared name: with no per-invitee
- * secret, the name is the only signal there is. A per-invitee code would let us
- * bind the payment to the invite instead.
+ * The code is the only thing verified. Name and email are taken at face value —
+ * the session is open to anyone holding the code, and the link is meant to be
+ * forwarded, so there is no roster to check a joiner against.
+ *
+ * Email is still used to *place* them: a second contribution from the same
+ * address lands on the same row rather than splitting one person across two,
+ * which would quietly corrupt "2 of 6 paid". That is de-duplication, not
+ * authentication — anyone can type anyone's address, so it grants nothing a
+ * fresh row wouldn't.
  */
 export function recordContribution(input: {
   sessionId: string
   code: string
   name: string
+  email: string
   amount: number
   cardNumber: string
 }): StoreResult<{ contribution: SplitPayContribution; contributor: SplitPayContributor }> {
@@ -138,12 +142,97 @@ export function recordContribution(input: {
   if (blocked) return blocked
 
   const name = input.name.trim()
+  const email = input.email.trim()
   const contributor =
     details.contributors.find(
-      (c) => c.name.toLowerCase() === name.toLowerCase(),
-    ) ?? addContributor(details, { name, email: null, pledged: 0 })
+      (c) => c.email !== null && c.email.toLowerCase() === email.toLowerCase(),
+    ) ?? addContributor(details, { name, email, pledged: 0 })
 
   return applyPayment(details, contributor, input.amount, input.cardNumber)
+}
+
+/**
+ * Take a contribution from a signed-in DosshPay customer, funded from one of
+ * their accounts rather than a card.
+ *
+ * The deck splits a session's contributors into existing DosshPay users and
+ * non-users, and this is the users' half. It differs from `recordContribution`
+ * in the thing that matters: the payer is resolved from their session, so there
+ * is no typed name to guess from and no way to land on someone else's row.
+ *
+ * The balance debit is the caller's job (see `contributeAsUserAction`) — this
+ * module owns pools, not accounts, and returns the *applied* amount so the
+ * caller debits exactly what the pool took after clamping.
+ */
+export function recordUserContribution(input: {
+  sessionId: string
+  code: string
+  customer: { id: string; email: string | null; name: string }
+  amount: number
+}): StoreResult<{ contribution: SplitPayContribution; contributor: SplitPayContributor }> {
+  const session = sessions.get(input.sessionId)
+  if (!session) return { ok: false, message: "That SplitPay session no longer exists." }
+
+  const { details } = session
+  // The flow diagram is explicit that the emailed code gates users too, not
+  // just strangers — holding a DosshPay account is not an invitation.
+  if (details.accessCode !== input.code.trim()) {
+    return { ok: false, message: "That code doesn't match this session." }
+  }
+
+  const blocked = fundingBlocked(details)
+  if (blocked) return blocked
+
+  return applyPayment(details, resolveCustomerRow(details, input.customer), input.amount, null)
+}
+
+/**
+ * Find the roster row belonging to a signed-in customer, creating one if this
+ * is their first contribution.
+ *
+ * Three cases, in order of how much we trust them: already bound by customer
+ * id; invited by an email that matches their account, in which case the row is
+ * claimed and bound so it never has to be matched by email again; or nobody we
+ * know, who gets a fresh row bound to them from the start.
+ */
+function resolveCustomerRow(
+  details: SplitPayDetails,
+  customer: { id: string; email: string | null; name: string },
+): SplitPayContributor {
+  const bound = details.contributors.find((c) => c.customerId === customer.id)
+  if (bound) return bound
+
+  const email = customer.email?.trim().toLowerCase()
+  const invited = email
+    ? details.contributors.find(
+        (c) => c.customerId === null && c.email?.toLowerCase() === email,
+      )
+    : undefined
+  if (invited) {
+    invited.customerId = customer.id
+    return invited
+  }
+
+  return addContributor(details, {
+    name: customer.name,
+    email: customer.email,
+    pledged: 0,
+    customerId: customer.id,
+  })
+}
+
+/** Sessions a customer contributes to but does not own, for the dashboard list
+ * that means they never need the invite email again. */
+export function listSessionsForCustomer(customerId: string): {
+  session: StoredSession
+  contributor: SplitPayContributor
+}[] {
+  return [...sessions.values()].flatMap((session) => {
+    const contributor = session.details.contributors.find(
+      (c) => c.customerId === customerId,
+    )
+    return contributor && !contributor.isCreator ? [{ session, contributor }] : []
+  })
 }
 
 /**
@@ -323,13 +412,21 @@ export function startSpending(sessionId: string): StoreResult<SplitPayDetails> {
 
 function addContributor(
   details: SplitPayDetails,
-  input: { name: string; email: string | null; pledged: number },
+  input: {
+    name: string
+    email: string | null
+    pledged: number
+    /** Set when the row is created by a signed-in DosshPay customer paying in;
+     * `null` for someone invited by email who may never have an account. */
+    customerId?: string | null
+  },
 ): SplitPayContributor {
   const contributor: SplitPayContributor = {
     id: `sp-${slug(input.name)}-${details.contributors.length + 1}`,
     name: input.name,
     initial: initialsOf(input.name),
     email: input.email,
+    customerId: input.customerId ?? null,
     pledged: input.pledged,
     amount: 0,
     targetDate: null,

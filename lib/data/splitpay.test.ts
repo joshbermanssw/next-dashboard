@@ -49,6 +49,7 @@ describe("recordContribution", () => {
       sessionId: SESSION,
       code: CODE,
       name: "Benji",
+      email: "benji@email.com",
       amount: 100,
       cardNumber: VISA,
       ...overrides,
@@ -80,7 +81,11 @@ describe("recordContribution", () => {
   })
 
   it("adds an unknown payer as a new contributor", () => {
-    const result = contribute({ name: "Ringo", amount: 50 })
+    const result = contribute({
+      name: "Ringo",
+      email: "ringo@example.com",
+      amount: 50,
+    })
 
     expect(result.ok).toBe(true)
     const ringo = store
@@ -299,6 +304,7 @@ describe("seed isolation", () => {
       sessionId: SESSION,
       code: CODE,
       name: "Benji",
+      email: "benji@email.com",
       amount: 100,
       cardNumber: VISA,
     })
@@ -307,5 +313,139 @@ describe("seed isolation", () => {
     const seeded = seedAccounts.find((a) => a.id === "splitpay")!.splitpay!
     expect(seeded.collected).toBe(1_400)
     expect(seeded.contributors.find((c) => c.name === "Benji")?.amount).toBe(150)
+  })
+})
+
+describe("contributor identity", () => {
+  function contribute(over: Partial<Parameters<Store["recordContribution"]>[0]> = {}) {
+    return store.recordContribution({
+      sessionId: SESSION,
+      code: CODE,
+      name: "Someone",
+      email: "someone@example.com",
+      amount: 50,
+      cardNumber: VISA,
+      ...over,
+    })
+  }
+
+  function rows() {
+    return store.getSession(SESSION)!.details.contributors
+  }
+
+  it("puts a repeat payer from the same address on one row", () => {
+    contribute({ email: "ringo@example.com", amount: 50 })
+    contribute({ email: "ringo@example.com", amount: 30 })
+
+    const matches = rows().filter((c) => c.email === "ringo@example.com")
+    expect(matches).toHaveLength(1)
+    expect(matches[0].amount).toBe(80)
+  })
+
+  it("matches on email regardless of the name typed", () => {
+    // The name is a label, not a check — the deck's join form asks for it, but
+    // nothing is verified against a roster.
+    contribute({ name: "Benji", email: "benji@email.com", amount: 25 })
+
+    const benji = rows().filter((c) => c.name === "Benji")
+    expect(benji).toHaveLength(1)
+    expect(benji[0].amount).toBe(175)
+  })
+
+  it("does not let a typed name land on someone else's row", () => {
+    // Same name as the seeded Benji, different address → a separate person.
+    contribute({ name: "Benji", email: "impostor@example.com", amount: 20 })
+
+    const benji = rows().find((c) => c.email === "benji@email.com")!
+    expect(benji.amount).toBe(150)
+    expect(rows().find((c) => c.email === "impostor@example.com")?.amount).toBe(20)
+  })
+
+  it("marks a card contributor as having no DosshPay account", () => {
+    contribute({ email: "nobody@example.com" })
+    expect(rows().find((c) => c.email === "nobody@example.com")?.customerId).toBeNull()
+  })
+})
+
+describe("recordUserContribution", () => {
+  const customer = { id: "cust-new", email: "new@example.com", name: "New Person" }
+
+  function rows() {
+    return store.getSession(SESSION)!.details.contributors
+  }
+
+  it("still demands the emailed code from a signed-in customer", () => {
+    const result = store.recordUserContribution({
+      sessionId: SESSION,
+      code: "000000",
+      customer,
+      amount: 100,
+    })
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.message).toMatch(/code/i)
+  })
+
+  it("binds the contribution to the customer, not a typed name", () => {
+    const result = store.recordUserContribution({
+      sessionId: SESSION,
+      code: CODE,
+      customer,
+      amount: 100,
+    })
+
+    expect(result.ok).toBe(true)
+    const row = rows().find((c) => c.customerId === "cust-new")!
+    expect(row.amount).toBe(100)
+    expect(row.savedCard).toBeNull() // funded from a balance, so no card
+  })
+
+  it("claims an invited row when the address matches, instead of duplicating", () => {
+    store.recordUserContribution({
+      sessionId: SESSION,
+      code: CODE,
+      customer: { id: "cust-priya", email: "priya@example.com", name: "Priya Nair" },
+      amount: 75,
+    })
+
+    const priya = rows().filter((c) => c.email === "priya@example.com")
+    expect(priya).toHaveLength(1)
+    expect(priya[0].customerId).toBe("cust-priya")
+    expect(priya[0].amount).toBe(75)
+  })
+
+  it("keeps a returning customer on the row they already own", () => {
+    const twice = () =>
+      store.recordUserContribution({ sessionId: SESSION, code: CODE, customer, amount: 40 })
+    twice()
+    twice()
+
+    const owned = rows().filter((c) => c.customerId === "cust-new")
+    expect(owned).toHaveLength(1)
+    expect(owned[0].amount).toBe(80)
+  })
+})
+
+describe("listSessionsForCustomer", () => {
+  it("lists sessions a customer joined but does not own", () => {
+    store.recordUserContribution({
+      sessionId: SESSION,
+      code: CODE,
+      customer: { id: "cust-guest", email: "guest@example.com", name: "Guest" },
+      amount: 10,
+    })
+
+    const joined = store.listSessionsForCustomer("cust-guest")
+    expect(joined).toHaveLength(1)
+    expect(joined[0].session.details.sessionId).toBe(SESSION)
+    expect(joined[0].contributor.amount).toBe(10)
+  })
+
+  it("omits pools the customer created — those are already their accounts", () => {
+    const creator = store.getSession(SESSION)!.details.contributors.find((c) => c.isCreator)!
+    expect(store.listSessionsForCustomer(creator.customerId!)).toHaveLength(0)
+  })
+
+  it("is empty for a customer who has joined nothing", () => {
+    expect(store.listSessionsForCustomer("cust-stranger")).toHaveLength(0)
   })
 })
