@@ -12,26 +12,27 @@ import { formatCurrency, cn } from "@/lib/utils"
 /**
  * Step 2 — the form a non-DosshPay invitee fills in to join a session and pay.
  *
+ * Strictly the *non-user* path, as the deck labels it. Signed-in customers get
+ * `UserContributeForm` instead, which knows who they are and takes the money
+ * from a balance — so nothing here needs to accommodate them.
+ *
  * Everything it collects is validated again in `contributeAction`; the checks
  * here exist to give fast feedback, not to be trusted.
  */
 export function ContributeForm({
   sessionId,
   remaining,
-  prefillName = "",
 }: {
   sessionId: string
   remaining: number
-  /** Signed-in visitors get their name filled in — invitees are often already
-   * DosshPay customers arriving from the same email. */
-  prefillName?: string
 }) {
   const router = useRouter()
   const [pending, startTransition] = React.useTransition()
   const [errors, setErrors] = React.useState<Record<string, string>>({})
   const [message, setMessage] = React.useState<string | null>(null)
 
-  const [name, setName] = React.useState(prefillName)
+  const [name, setName] = React.useState("")
+  const [email, setEmail] = React.useState("")
   const [code, setCode] = React.useState("")
   const [amount, setAmount] = React.useState("")
   const [accepted, setAccepted] = React.useState(false)
@@ -46,6 +47,7 @@ export function ContributeForm({
       const result = await contributeAction({
         sessionId,
         name,
+        email,
         code,
         amount: Number(amount),
         cardNumber: card.number,
@@ -72,6 +74,24 @@ export function ContributeForm({
           onChange={(e) => setName(e.target.value)}
           autoComplete="name"
           aria-invalid={Boolean(errors.name)}
+        />
+      </PublicField>
+
+      <PublicField
+        label="Email Address"
+        required
+        error={errors.email}
+        htmlFor="sp-email"
+        hint="Where your receipt and return link are sent"
+      >
+        <Input
+          id="sp-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          placeholder="you@example.com"
+          aria-invalid={Boolean(errors.email)}
         />
       </PublicField>
 
