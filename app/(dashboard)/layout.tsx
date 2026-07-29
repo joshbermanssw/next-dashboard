@@ -6,6 +6,7 @@ import { AccountsProvider } from "@/contexts/accounts-context"
 import { Toaster } from "@/components/ui/sonner"
 import { verifySession } from "@/server/auth/dal"
 import { listSessions } from "@/lib/data/splitpay"
+import { movedBalances } from "@/lib/data/balances"
 
 export default async function DashboardLayout({
   children,
@@ -22,6 +23,10 @@ export default async function DashboardLayout({
     details: s.details,
   }))
 
+  // Same reason, other direction: funding a pool from a DosshPay account debits
+  // that account, and the seed the client renders from knows nothing about it.
+  const balances = movedBalances()
+
   return (
     <UserProvider customer={customer}>
       <SidebarProvider
@@ -37,7 +42,10 @@ export default async function DashboardLayout({
           <SiteHeader />
           <div className="flex flex-1 flex-col">
             <div className="@container/main flex flex-1 flex-col gap-2">
-              <AccountsProvider splitpaySessions={splitpaySessions}>
+              <AccountsProvider
+                splitpaySessions={splitpaySessions}
+                balances={balances}
+              >
                 {children}
               </AccountsProvider>
             </div>

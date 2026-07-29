@@ -13,7 +13,13 @@ import { SplitPayOverview } from "@/components/dashboard/splitpay-overview"
  * Switches the dashboard body on the selected account: SplitPay pools show
  * their funding view, every other account shows the standard widget grid.
  */
-export function Overview() {
+export function Overview({
+  joinedSessions,
+}: {
+  /** Rendered server-side and passed through as a slot — it reads the session
+   * store, which client code must never import. */
+  joinedSessions?: React.ReactNode
+}) {
   const { selected } = useAccounts()
 
   if (selected.kind === "splitpay" && selected.splitpay) {
@@ -26,6 +32,7 @@ export function Overview() {
         <TotalBalance />
         <AccountCards />
         <QuickActions />
+        {joinedSessions}
         <RecentActivity />
       </div>
 
