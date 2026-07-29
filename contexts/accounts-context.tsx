@@ -11,7 +11,6 @@ import {
 import {
   accountKindMeta,
   freshAccountData,
-  generateAccessCode,
   generateContributorToken,
   generateSessionId,
   AUD_CURRENCY,
@@ -40,6 +39,9 @@ type AccountsContextValue = {
     targetAmount: number
     currencyCode: string
     deadline: number
+    /** The 6-digit code the creator chose; contributors are emailed it and
+     * enter it to join. */
+    accessCode: string
   }) => Account
   /** O(1) lookup of an account by id. */
   getAccount: (id: string) => Account | undefined
@@ -61,6 +63,7 @@ export type SeedSplitPaySession = {
 export function AccountsProvider({
   children,
   splitpaySessions = [],
+  balances = [],
 }: {
   children: React.ReactNode
   /**
@@ -70,25 +73,33 @@ export function AccountsProvider({
    * the hub would disagree about the same pool.
    */
   splitpaySessions?: SeedSplitPaySession[]
+  /** Balances that have moved server-side, for the same reason: funding a pool
+   * from an account debits it, and the seed doesn't know. */
+  balances?: { accountId: string; balance: number }[]
 }) {
   const { customer } = useUser()
   // Seeded once, through the same accessor the server routes use, with any
   // live pool state layered over the static seed.
   const [accounts, setAccounts] = useState<Account[]>(() => {
     const seeded = getAccountsForCustomer(customer.id)
-    if (splitpaySessions.length === 0) return seeded
+    if (splitpaySessions.length === 0 && balances.length === 0) return seeded
 
     const byAccount = new Map(splitpaySessions.map((s) => [s.accountId, s.details]))
+    const movedBalance = new Map(balances.map((b) => [b.accountId, b.balance]))
     return seeded.map((account) => {
       const splitpay = byAccount.get(account.id)
-      if (!splitpay) return account
-      // The pool's collected total *is* the account balance for a SplitPay
-      // account, so they move together.
-      return {
-        ...account,
-        splitpay,
-        data: { ...account.data, balance: splitpay.collected },
+      if (splitpay) {
+        // The pool's collected total *is* the account balance for a SplitPay
+        // account, so they move together.
+        return {
+          ...account,
+          splitpay,
+          data: { ...account.data, balance: splitpay.collected },
+        }
       }
+      const balance = movedBalance.get(account.id)
+      if (balance === undefined) return account
+      return { ...account, data: { ...account.data, balance } }
     })
   })
   const [selectedId, setSelectedId] = useState(accounts[0]?.id ?? "")
@@ -148,6 +159,7 @@ export function AccountsProvider({
       targetAmount: number
       currencyCode: string
       deadline: number
+      accessCode: string
     }) => {
       const id = `splitpay-${++nextId.current}`
       const currency =
@@ -156,7 +168,7 @@ export function AccountsProvider({
       const splitpay: SplitPayDetails = {
         sessionId: generateSessionId(),
         accountNumber: String(Math.floor(100000 + Math.random() * 900000)),
-        accessCode: generateAccessCode(),
+        accessCode: input.accessCode,
         targetAmount: input.targetAmount,
         collected: 0,
         deadline: input.deadline,
@@ -167,6 +179,9 @@ export function AccountsProvider({
             name: customer.firstName || "You",
             initial,
             email: null,
+            // The creator is a DosshPay customer by definition — they are
+            // signed in to have created the pool at all.
+            customerId: customer.id || SEED_CUSTOMER_ID,
             // The creator's own share is theirs to set later; the pool target is
             // the group's number, not one person's pledge.
             pledged: 0,

@@ -20,7 +20,7 @@ import {
 } from "@/lib/dashboard-data"
 import { cn } from "@/lib/utils"
 
-type Phase = "intro" | "name" | "amount" | "time"
+type Phase = "intro" | "name" | "amount" | "time" | "code"
 
 const HOUR_MS = 60 * 60 * 1000
 
@@ -58,7 +58,8 @@ const FEATURES: {
 
 /**
  * SplitPay creation flow rendered inside CreateAccountDialog: an explainer,
- * then a 3-step wizard (name → amount → funding window) that creates the pool.
+ * then a 4-step wizard (name → amount → funding window → verification code)
+ * that creates the pool.
  */
 export function SplitPayCreate({ onDone }: { onDone: () => void }) {
   const { addSplitPayAccount } = useAccounts()
@@ -71,10 +72,15 @@ export function SplitPayCreate({ onDone }: { onDone: () => void }) {
   const [presetHours, setPresetHours] = React.useState<number | null>(null)
   const [customHours, setCustomHours] = React.useState("")
   const [specificDate, setSpecificDate] = React.useState("")
+  // The creator picks the code contributors will be emailed. Theirs to choose
+  // rather than ours to generate — they are the one who has to read it out
+  // when someone says the email never arrived.
+  const [code, setCode] = React.useState("")
 
   const amountValue = Number(amount)
   const nameValid = name.trim().length > 0
   const amountValid = Number.isFinite(amountValue) && amountValue > 0
+  const codeValid = /^\d{6}$/.test(code)
 
   const resolvedHours =
     customHours.trim() !== "" ? Number(customHours) : presetHours
@@ -85,7 +91,7 @@ export function SplitPayCreate({ onDone }: { onDone: () => void }) {
       : Number.isFinite(specificMs) && specificMs > Date.now()
 
   function handleCreate() {
-    if (!timeValid) return
+    if (!timeValid || !codeValid) return
     const deadline =
       mode === "from-now"
         ? Date.now() + (resolvedHours as number) * HOUR_MS
@@ -95,6 +101,7 @@ export function SplitPayCreate({ onDone }: { onDone: () => void }) {
       targetAmount: amountValue,
       currencyCode: currency,
       deadline,
+      accessCode: code,
     })
     // Mirror the new pool into the server store so its public contributor pages
     // resolve. Fire-and-forget: the pool already exists in client state, and the
@@ -164,7 +171,8 @@ export function SplitPayCreate({ onDone }: { onDone: () => void }) {
     )
   }
 
-  const step = phase === "name" ? 1 : phase === "amount" ? 2 : 3
+  const step =
+    phase === "name" ? 1 : phase === "amount" ? 2 : phase === "time" ? 3 : 4
 
   return (
     <div className="flex flex-col gap-5">
@@ -174,7 +182,15 @@ export function SplitPayCreate({ onDone }: { onDone: () => void }) {
             <button
               type="button"
               aria-label="Back"
-              onClick={() => setPhase(phase === "amount" ? "name" : "amount")}
+              onClick={() =>
+                setPhase(
+                  phase === "amount"
+                    ? "name"
+                    : phase === "time"
+                      ? "amount"
+                      : "time"
+                )
+              }
               className="absolute left-6 rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <ChevronLeftIcon className="size-5" />
@@ -262,7 +278,7 @@ export function SplitPayCreate({ onDone }: { onDone: () => void }) {
             Next
           </Button>
         </div>
-      ) : (
+      ) : phase === "time" ? (
         <div className="flex flex-col gap-4">
           <h3 className="font-heading text-xl font-semibold text-foreground">
             Set funding period time limit
@@ -333,6 +349,41 @@ export function SplitPayCreate({ onDone }: { onDone: () => void }) {
           <Button
             className="mt-2 w-full"
             disabled={!timeValid}
+            onClick={() => setPhase("code")}
+          >
+            Next
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <h3 className="font-heading text-xl font-semibold text-foreground">
+            Set a verification code
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Contributors enter this to join. It goes out in their invite email —
+            anyone with the link and the code can pay in.
+          </p>
+          <input
+            autoFocus
+            inputMode="numeric"
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            placeholder="6-digit code"
+            className="w-full rounded-xl border border-panel-border bg-white/5 px-4 py-3.5 text-center text-lg tracking-[0.4em] text-foreground placeholder:text-base placeholder:tracking-normal placeholder:text-muted-foreground focus-visible:border-accentBlue focus-visible:outline-none"
+          />
+          <button
+            type="button"
+            onClick={() =>
+              setCode(String(Math.floor(100000 + Math.random() * 900000)))
+            }
+            className="self-center text-xs font-medium text-accentBlue hover:text-accentBlueHover"
+          >
+            Generate one for me
+          </button>
+
+          <Button
+            className="mt-2 w-full"
+            disabled={!codeValid}
             onClick={handleCreate}
           >
             Create SplitPay Account
@@ -343,10 +394,10 @@ export function SplitPayCreate({ onDone }: { onDone: () => void }) {
   )
 }
 
-function StepProgress({ step }: { step: 1 | 2 | 3 }) {
+function StepProgress({ step }: { step: 1 | 2 | 3 | 4 }) {
   return (
     <div className="flex gap-2">
-      {[1, 2, 3].map((i) => (
+      {[1, 2, 3, 4].map((i) => (
         <span
           key={i}
           className={cn(
