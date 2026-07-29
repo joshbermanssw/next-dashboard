@@ -13,19 +13,17 @@ import {
 } from "@/components/ui/sidebar"
 import {
   HomeIcon,
-  ChartColumnIcon,
-  SearchIcon,
-  TrendingUpIcon,
-  ReceiptIcon,
+  RepeatIcon,
+  BadgePercentIcon,
+  LayoutGridIcon,
 } from "lucide-react"
 import { DossherChat } from "@/components/dossher-chat"
 
 const navItems = [
   { title: "Home", url: "/", icon: HomeIcon },
-  { title: "Budget Planner", url: "/budget-planner", icon: ChartColumnIcon },
-  { title: "Dossher", url: "/dossher", icon: SearchIcon },
-  { title: "Investment Tracker", url: "/investment-tracker", icon: TrendingUpIcon },
-  { title: "Expense Manager", url: "/expense-manager", icon: ReceiptIcon },
+  { title: "Subscriptions", url: "/subscriptions", icon: RepeatIcon },
+  { title: "Shopback", url: "/shopback", icon: BadgePercentIcon },
+  { title: "Products", url: "/products", icon: LayoutGridIcon },
 ]
 
 
