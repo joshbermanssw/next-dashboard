@@ -16,14 +16,19 @@ import {
   RepeatIcon,
   BadgePercentIcon,
   LayoutGridIcon,
+  WalletCardsIcon,
 } from "lucide-react"
 import { DossherChat } from "@/components/dossher-chat"
 
+// WalletCardsIcon over WalletIcon for Accounts: the plain wallet already stands
+// for the Everyday account kind (see accountKindMeta), and the fanned cards read
+// as the collection of money buckets rather than one of them.
 const navItems = [
   { title: "Home", url: "/", icon: HomeIcon },
   { title: "Subscriptions", url: "/subscriptions", icon: RepeatIcon },
   { title: "Shopback", url: "/shopback", icon: BadgePercentIcon },
   { title: "Products", url: "/products", icon: LayoutGridIcon },
+  { title: "Accounts", url: "/accounts", icon: WalletCardsIcon },
 ]
 
 
