@@ -2,9 +2,18 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { CreditCardIcon, MailIcon, PlusIcon } from "lucide-react"
+import {
+  CreditCardIcon,
+  MailIcon,
+  PlusIcon,
+  ShieldCheckIcon,
+} from "lucide-react"
 
-import { payDifferenceAction, updatePledgeAction } from "@/app/actions/splitpay"
+import {
+  authoriseSelfAction,
+  payDifferenceAction,
+  updatePledgeAction,
+} from "@/app/actions/splitpay"
 import { ContributorRoster } from "@/components/splitpay/contributor-roster"
 import { FundingBar } from "@/components/splitpay/public-chrome"
 import {
@@ -38,6 +47,14 @@ export function ManageView({
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Sits directly under the session's target/collected strip: the sign-off
+          is against that target, so it reads before the personal detail below. */}
+      <AuthoriseSpendRow
+        sessionId={session.sessionId}
+        token={token}
+        viewer={viewer}
+      />
+
       <ContributionSummary session={session} viewer={viewer} />
 
       <div className="grid grid-cols-2 gap-1 rounded-full border border-panel-border bg-white/[0.03] p-1">
@@ -195,6 +212,106 @@ function ContributionSummary({
           pct={session.pct}
         />
       </div>
+    </div>
+  )
+}
+
+/**
+ * The contributor's own sign-off: "my share is good to go, the pool may start
+ * spending". It sits directly under the session's target/collected strip, which
+ * is the number it speaks to — you agree to spending against *that* target.
+ *
+ * Distinct from the creator's roster control, which grants someone else the
+ * authority. This is consent, given for oneself, and withdrawable while the
+ * pool is still funding — once spending has actually started there is nothing
+ * left to consent to.
+ */
+function AuthoriseSpendRow({
+  sessionId,
+  token,
+  viewer,
+}: {
+  sessionId: string
+  token: string
+  viewer: ViewerContribution
+}) {
+  const router = useRouter()
+  const [pending, startTransition] = React.useTransition()
+  const [error, setError] = React.useState<string | null>(null)
+
+  // The creator's authority is the one everyone else's is granted from — the
+  // store refuses to revoke it, so there is no decision to offer them here.
+  if (viewer.isCreator) return null
+
+  function toggle() {
+    setError(null)
+    startTransition(async () => {
+      const result = await authoriseSelfAction({
+        sessionId,
+        token,
+        authorised: !viewer.authorised,
+      })
+      if (!result.ok) {
+        setError(result.message)
+        return
+      }
+      router.refresh()
+    })
+  }
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-3 rounded-2xl border p-5",
+        viewer.authorised
+          ? "border-positive/30 bg-positive/[0.06]"
+          : "border-panel-border bg-white/[0.03]"
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <ShieldCheckIcon
+          className={cn(
+            "mt-0.5 size-4 shrink-0",
+            viewer.authorised ? "text-positive" : "text-label"
+          )}
+        />
+        <div>
+          <p className="text-xs font-semibold text-foreground">
+            {viewer.authorised
+              ? "You've authorised spending"
+              : "Authorise spending"}
+          </p>
+          <p className="mt-0.5 text-[11px] leading-relaxed text-blueLight/70">
+            {viewer.authorised
+              ? "Your share is signed off. You can withdraw this while the pool is still funding."
+              : "Confirm your share is good to go, so the pool can start spending against its target."}
+          </p>
+        </div>
+      </div>
+
+      {error ? (
+        <p role="alert" className="text-xs text-negative">
+          {error}
+        </p>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={pending}
+        className={cn(
+          "w-full rounded-xl px-4 py-3 text-sm font-bold transition-colors disabled:opacity-60",
+          viewer.authorised
+            ? "border border-positive/40 bg-positive/10 text-positive hover:bg-positive/20"
+            : "bg-accentBlue text-blue hover:bg-accentBlueHover"
+        )}
+      >
+        {pending
+          ? "Saving…"
+          : viewer.authorised
+            ? "Authorised — Withdraw"
+            : "Authorise Start Spend"}
+      </button>
     </div>
   )
 }

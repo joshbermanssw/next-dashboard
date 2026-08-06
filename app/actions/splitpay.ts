@@ -322,6 +322,36 @@ export async function authoriseByTokenAction(input: {
   return { ok: true, value: null }
 }
 
+/**
+ * A contributor signing off their *own* share — "my bit is good to go, start
+ * spending". The creator granting authority (above) and a contributor giving
+ * their own consent are different acts on the same flag, so they are different
+ * actions: this one takes no `contributorId` at all.
+ *
+ * That omission is the security property. The token names the actor, and the
+ * actor is the only row that can move, so no contributor can authorise — or
+ * un-authorise — anyone but themselves by editing a payload.
+ */
+export async function authoriseSelfAction(input: {
+  sessionId: string
+  token: string
+  authorised: boolean
+}): Promise<ActionResult> {
+  const actor = getContributorByToken(input.sessionId, input.token)
+  if (!actor) return invalid("That manage link is no longer valid.")
+
+  const result = setAuthorised({
+    sessionId: input.sessionId,
+    contributorId: actor.id,
+    authorised: input.authorised,
+  })
+  if (!result.ok) return invalid(result.message)
+
+  const session = getSession(input.sessionId)
+  revalidateSession(input.sessionId, session?.accountId)
+  return { ok: true, value: null }
+}
+
 /* ---------------------------------------------------------------- creator */
 
 /**
