@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { QRCodeSVG } from "qrcode.react"
 import { loginAction } from "@/app/actions/auth"
+import { APP_STORE_URL, DOWNLOAD_URL, PLAY_STORE_URL } from "@/lib/app-links"
 import { LoginFormSchema, type LoginFormState } from "@/lib/definitions"
 import HeadingTag from "@/components/util/heading-tag"
 import {
@@ -253,10 +254,6 @@ function useFirstVisitThisSession(): boolean {
 
   return first
 }
-
-const DOWNLOAD_URL = "https://dosh-hub.vercel.app/download"
-const APP_STORE_URL = "https://apps.apple.com/app/dosshpay"
-const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.dosshpay"
 
 function SignupDialog({
   ref,

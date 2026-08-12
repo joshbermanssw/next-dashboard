@@ -11,14 +11,21 @@ import { formatCurrency, cn } from "@/lib/utils"
 
 /** Dashboard view for a SplitPay account: balance, quick actions, and the
  * funding card that links through to the SplitPay Hub. */
-export function SplitPayOverview({ account }: { account: Account }) {
+export function SplitPayOverview({
+  account,
+  isMobile,
+}: {
+  account: Account
+  /** Device class, for the quick actions' mobile-only More sheet. */
+  isMobile: boolean
+}) {
   const splitpay = account.splitpay
   if (!splitpay) return null
 
   return (
     <div className="flex w-full max-w-2xl flex-col gap-6">
       <TotalBalance />
-      <QuickActions />
+      <QuickActions isMobile={isMobile} />
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">

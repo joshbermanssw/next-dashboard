@@ -15,15 +15,19 @@ import { SplitPayOverview } from "@/components/dashboard/splitpay-overview"
  */
 export function Overview({
   joinedSessions,
+  isMobile,
 }: {
   /** Rendered server-side and passed through as a slot — it reads the session
    * store, which client code must never import. */
   joinedSessions?: React.ReactNode
+  /** Device class, decided from the request. Threaded down to QuickActions,
+   * whose More sheet holds the mobile-only QR flow. */
+  isMobile: boolean
 }) {
   const { selected } = useAccounts()
 
   if (selected.kind === "splitpay" && selected.splitpay) {
-    return <SplitPayOverview account={selected} />
+    return <SplitPayOverview account={selected} isMobile={isMobile} />
   }
 
   return (
@@ -31,7 +35,7 @@ export function Overview({
       <div className="flex flex-col gap-6">
         <TotalBalance />
         <AccountCards />
-        <QuickActions />
+        <QuickActions isMobile={isMobile} />
         {joinedSessions}
         <RecentActivity />
       </div>
