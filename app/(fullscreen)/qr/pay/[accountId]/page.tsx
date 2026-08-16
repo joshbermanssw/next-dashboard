@@ -1,15 +1,15 @@
 import { notFound } from "next/navigation"
 
 import { verifySession } from "@/server/auth/dal"
-import { getAccount, getAccountsForCustomer } from "@/lib/data/accounts"
-import { balanceOf } from "@/lib/data/balances"
-import { ConfirmPayment } from "@/components/qr/confirm-payment"
-import { parseAmount, type QrAccount } from "@/lib/qr-payment"
+import { getAccount } from "@/lib/data/accounts"
+import { PayAmountScreen } from "@/components/qr/pay-amount-screen"
+import { parseAmount } from "@/lib/qr-payment"
+import { payerAccounts } from "@/server/qr/payer-accounts"
 
-export const metadata = { title: "Confirm payment · DosshPay" }
+export const metadata = { title: "Send payment · DosshPay" }
 
 /**
- * Confirm screen for a scanned payment code.
+ * Step one of paying a scanned code.
  *
  * Deliberately *not* device-gated the way `/qr` is: paying needs no camera, and
  * this URL is what a phone's own camera app opens. It stays behind the session
@@ -29,25 +29,17 @@ export default async function QrPayPage({
   const payee = getAccount(accountId)
   if (!payee) notFound()
 
-  // TODO(bff): the payee's display name comes from resolving the account's
-  // customer. The single-tenant seed has no such lookup, so the account's own
-  // label is the honest answer for now.
-  const accounts: QrAccount[] = getAccountsForCustomer(customer.id)
-    .filter(
-      (account) => account.kind !== "splitpay" && account.id !== payee.id,
-    )
-    .map((account) => ({
-      id: account.id,
-      label: account.label,
-      kind: account.kind,
-      currency: account.currency,
-      balance: balanceOf(account.id) ?? account.data.balance,
-    }))
-
   return (
-    <ConfirmPayment
-      payee={{ id: payee.id, label: payee.label }}
-      accounts={accounts}
+    <PayAmountScreen
+      payee={{
+        id: payee.id,
+        // TODO(bff): the payee's display name comes from resolving the
+        // account's customer. The single-tenant seed has no such lookup, so the
+        // account's own label is the honest answer for now.
+        label: payee.label,
+        accountNumber: payee.accountNumber,
+      }}
+      accounts={payerAccounts(customer.id, payee.id)}
       requestedAmount={parseAmount(amt)}
     />
   )

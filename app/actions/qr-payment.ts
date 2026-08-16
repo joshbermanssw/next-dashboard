@@ -1,11 +1,16 @@
 "use server"
 
 /**
- * Server action behind the QR confirm screen.
+ * Server action behind the QR payment flow.
  *
  * The payer is always signed in — `/qr/pay/*` is a protected route — so this
  * gates on the session and moves money through the same ledger SplitPay
  * funding uses (`lib/data/balances.ts`).
+ *
+ * The rail's fee is charged to the payer on top of the amount; the payee is
+ * credited the amount they asked for. Choosing a cheaper rail therefore costs
+ * the payer less without changing what the payee receives, which is the whole
+ * proposition behind Hyper Switch.
  */
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
@@ -13,15 +18,24 @@ import { z } from "zod"
 import { verifySession } from "@/server/auth/dal"
 import { getAccount, getAccountsForCustomer } from "@/lib/data/accounts"
 import { balanceOf, credit, debit } from "@/lib/data/balances"
+import { savePayee } from "@/lib/data/payees"
+import { getRail, isRailId, railFee } from "@/lib/payment-rails"
 
 export type QrPaymentResult =
-  | { ok: true; value: { paid: number; remaining: number } }
+  | {
+      ok: true
+      value: { paid: number; fee: number; remaining: number; points: number }
+    }
   | { ok: false; message: string }
 
 const PaySchema = z.object({
   fromAccountId: z.string().min(1),
   toAccountId: z.string().min(1),
   amount: z.coerce.number().positive().finite().max(1_000_000),
+  railId: z.string().refine(isRailId, "Unknown payment method."),
+  /** Free text the payer attaches to the payment. */
+  reference: z.string().trim().max(140).optional(),
+  savePayee: z.boolean().optional(),
 })
 
 export async function payViaQr(
@@ -33,7 +47,10 @@ export async function payViaQr(
   if (!parsed.success) {
     return { ok: false, message: "That payment didn't look right." }
   }
-  const { fromAccountId, toAccountId, amount } = parsed.data
+  // `reference` is validated but not stored: there is no transaction ledger to
+  // hang it off yet, so it lives on the review screen only. It becomes a field
+  // on the payment request when the BFF lands.
+  const { fromAccountId, toAccountId, amount, railId } = parsed.data
 
   if (fromAccountId === toAccountId) {
     return { ok: false, message: "Choose a different account to pay from." }
@@ -46,15 +63,32 @@ export async function payViaQr(
     return { ok: false, message: "We couldn't find that account." }
   }
 
-  if (!getAccount(toAccountId)) {
+  const payee = getAccount(toAccountId)
+  if (!payee) {
     return { ok: false, message: "We couldn't find who you're paying." }
   }
 
-  // Refuses to overdraw, so this is the balance check as well as the debit.
-  const taken = debit(fromAccountId, amount)
+  const rail = getRail(railId)!
+  const fee = railFee(rail, amount)
+
+  // One debit for amount + fee, so a payer who can cover the amount but not the
+  // fee is refused here rather than going overdrawn by the fee alone.
+  const taken = debit(fromAccountId, amount + fee)
   if (!taken.ok) return taken
 
   credit(toAccountId, amount)
+
+  if (parsed.data.savePayee) {
+    savePayee(
+      customer.id,
+      {
+        accountId: payee.id,
+        name: payee.label,
+        accountNumber: payee.accountNumber,
+      },
+      Date.now(),
+    )
+  }
 
   // The dashboard renders both balances; neither is honest until it re-reads.
   revalidatePath("/")
@@ -63,6 +97,11 @@ export async function payViaQr(
 
   return {
     ok: true,
-    value: { paid: amount, remaining: balanceOf(fromAccountId) ?? 0 },
+    value: {
+      paid: amount,
+      fee,
+      remaining: balanceOf(fromAccountId) ?? 0,
+      points: rail.points,
+    },
   }
 }

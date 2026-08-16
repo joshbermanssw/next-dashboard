@@ -315,6 +315,11 @@ export function generateContributorToken(): string {
   return globalThis.crypto.randomUUID().replace(/-/g, "")
 }
 
+/** The 8-digit number that identifies an account to whoever is paying it. */
+export function generateAccountNumber(): string {
+  return String(Math.floor(10_000_000 + Math.random() * 90_000_000))
+}
+
 /** Quick-select purposes on the SplitPay target step. */
 export const SPLITPAY_TARGET_PRESETS = [
   "Trip",
@@ -360,6 +365,9 @@ export type Account = {
   customerId: string
   kind: AccountKind
   label: string
+  /** The number someone paying this account quotes — shown on the QR payment
+   * review screen, the way a BSB/account pair would be. */
+  accountNumber: string
   /** Plan segment for this account (drives the plan catalogue + card face). */
   accountType: AccountType
   /** This account's plan tier; `null` falls back to the basic face. */
@@ -885,10 +893,10 @@ const barcelonaTripFund: SplitPayDetails = {
 // per account (`accountCardDesign`): crypto → premium, everyday → standard,
 // global → business (corporate).
 export const seedAccounts: Account[] = [
-  { id: "crypto", customerId: SEED_CUSTOMER_ID, kind: "crypto", label: "Crypto", accountType: "everyday", tier: "PREMIUM", currency: "USDC", currencyFlag: "🇺🇸", data: cryptoData },
-  { id: "everyday", customerId: SEED_CUSTOMER_ID, kind: "everyday", label: "Everyday", accountType: "everyday", tier: "STANDARD", currency: "AUD", currencyFlag: "🇦🇺", data: everydayData },
-  { id: "global", customerId: SEED_CUSTOMER_ID, kind: "global", label: "Global", accountType: "corporate", tier: null, currency: "USD", currencyFlag: "🇺🇸", data: globalData },
-  { id: "splitpay", customerId: SEED_CUSTOMER_ID, kind: "splitpay", label: "Barcelona Trip Fund", accountType: "everyday", tier: "BASIC", currency: "AUD", currencyFlag: "🇦🇺", splitpay: barcelonaTripFund, data: { ...freshAccountData(), balance: barcelonaTripFund.collected } },
+  { id: "crypto", customerId: SEED_CUSTOMER_ID, kind: "crypto", accountNumber: "45285731", label: "Crypto", accountType: "everyday", tier: "PREMIUM", currency: "USDC", currencyFlag: "🇺🇸", data: cryptoData },
+  { id: "everyday", customerId: SEED_CUSTOMER_ID, kind: "everyday", accountNumber: "70914466", label: "Everyday", accountType: "everyday", tier: "STANDARD", currency: "AUD", currencyFlag: "🇦🇺", data: everydayData },
+  { id: "global", customerId: SEED_CUSTOMER_ID, kind: "global", accountNumber: "23860517", label: "Global", accountType: "corporate", tier: null, currency: "USD", currencyFlag: "🇺🇸", data: globalData },
+  { id: "splitpay", customerId: SEED_CUSTOMER_ID, kind: "splitpay", accountNumber: "58402193", label: "Barcelona Trip Fund", accountType: "everyday", tier: "BASIC", currency: "AUD", currencyFlag: "🇦🇺", splitpay: barcelonaTripFund, data: { ...freshAccountData(), balance: barcelonaTripFund.collected } },
 ]
 
 /** Dataset for a brand-new account: $0 balance, no cards, flat money flow,

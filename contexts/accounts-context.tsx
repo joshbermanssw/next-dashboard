@@ -11,6 +11,7 @@ import {
 import {
   accountKindMeta,
   freshAccountData,
+  generateAccountNumber,
   generateContributorToken,
   generateSessionId,
   AUD_CURRENCY,
@@ -138,6 +139,7 @@ export function AccountsProvider({
             id,
             customerId: customer.id || SEED_CUSTOMER_ID,
             kind,
+            accountNumber: generateAccountNumber(),
             label: sameKind === 0 ? label : `${label} ${sameKind + 1}`,
             // New accounts start on the basic everyday face until a plan is chosen.
             accountType: "everyday",
@@ -199,6 +201,7 @@ export function AccountsProvider({
         id,
         customerId: customer.id || SEED_CUSTOMER_ID,
         kind: "splitpay",
+        accountNumber: generateAccountNumber(),
         label: input.name,
         accountType: "everyday",
         tier: "BASIC",

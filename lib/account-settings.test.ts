@@ -44,6 +44,7 @@ describe("getAccountSettings", () => {
       id: "splitpay-1",
       customerId: "cust-test",
       kind: "splitpay",
+      accountNumber: "12345678",
       label: "SplitPay",
       accountType: "everyday",
       tier: "BASIC",
