@@ -1,16 +1,15 @@
 import { notFound } from "next/navigation"
 import { verifySession } from "@/server/auth/dal"
-import { ActivationTask } from "@/components/onboarding/activation-task"
-import type { ActivationTaskId } from "@/lib/activation"
+import {
+  ActivationTask,
+  type PlaceholderTaskId,
+} from "@/components/onboarding/activation-task"
 
-const TASKS: ActivationTaskId[] = [
-  "identity",
-  "security",
-  "preferences",
-  "billing",
-]
+// `identity` is absent on purpose — it is served by the static
+// /activate/identity route, which takes precedence over this dynamic segment.
+const TASKS: PlaceholderTaskId[] = ["security", "preferences", "billing"]
 
-function isTaskId(value: string): value is ActivationTaskId {
+function isTaskId(value: string): value is PlaceholderTaskId {
   return (TASKS as string[]).includes(value)
 }
 

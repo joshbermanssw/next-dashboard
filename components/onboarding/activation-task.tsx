@@ -1,65 +1,17 @@
 import Link from "next/link"
-import {
-  MdArrowBack,
-  MdBadge,
-  MdCreditCard,
-  MdDirectionsCar,
-  MdHome,
-  MdPhoneIphone,
-} from "react-icons/md"
+import { MdArrowBack } from "react-icons/md"
 import HeadingTag from "@/components/util/heading-tag"
-import { Badge } from "@/components/ui/badge"
 import type { ActivationTaskId } from "@/lib/activation"
 
-type Requirement = {
-  icon: React.ReactNode
-  title: string
-  detail: string
-  necessity: "Required" | "May be required"
-}
+/**
+ * Identity verification has a real flow at `/activate/identity`. These three
+ * journeys — biometric enrolment, the preferences workflow and payment methods
+ * — are still mobile-only, so the web rows explain that rather than opening a
+ * form that can't be finished.
+ */
+export type PlaceholderTaskId = Exclude<ActivationTaskId, "identity">
 
-const IDENTITY_DOCUMENTS: Requirement[] = [
-  {
-    icon: <MdBadge className="size-5" />,
-    title: "Passport",
-    detail: "Valid or recently expired",
-    necessity: "Required",
-  },
-  {
-    icon: <MdDirectionsCar className="size-5" />,
-    title: "Driver's licence",
-    detail: "Front and back photo required",
-    necessity: "Required",
-  },
-  {
-    icon: <MdCreditCard className="size-5" />,
-    title: "National ID card",
-    detail: "Medicare, birth certificate or national ID",
-    necessity: "Required",
-  },
-]
-
-const ADDRESS_DOCUMENTS: Requirement[] = [
-  {
-    icon: <MdHome className="size-5" />,
-    title: "Proof of address",
-    detail: "Bank statement or utility bill from the last 3 months",
-    necessity: "May be required",
-  },
-  {
-    icon: <MdPhoneIphone className="size-5" />,
-    title: "Mobile number",
-    detail: "For SMS verification",
-    necessity: "Required",
-  },
-]
-
-const COPY: Record<ActivationTaskId, { title: string; subtitle: string }> = {
-  identity: {
-    title: "What you'll need",
-    subtitle:
-      "Have these ready before we start. It keeps your account secure and compliant.",
-  },
+const COPY: Record<PlaceholderTaskId, { title: string; subtitle: string }> = {
   security: {
     title: "Secure your account",
     subtitle: "Biometrics, PIN and trusted devices.",
@@ -74,7 +26,7 @@ const COPY: Record<ActivationTaskId, { title: string; subtitle: string }> = {
   },
 }
 
-export function ActivationTask({ task }: { task: ActivationTaskId }) {
+export function ActivationTask({ task }: { task: PlaceholderTaskId }) {
   const { title, subtitle } = COPY[task]
 
   return (
@@ -93,85 +45,18 @@ export function ActivationTask({ task }: { task: ActivationTaskId }) {
         <p className="text-sm text-blueLight">{subtitle}</p>
       </header>
 
-      {task === "identity" ? (
-        <>
-          <RequirementGroup
-            legend="Identity — pick one"
-            requirements={IDENTITY_DOCUMENTS}
-          />
-          <RequirementGroup
-            legend="Address verification"
-            requirements={ADDRESS_DOCUMENTS}
-          />
-        </>
-      ) : null}
-
-      <NotAvailableYet task={task} />
-    </div>
-  )
-}
-
-function RequirementGroup({
-  legend,
-  requirements,
-}: {
-  legend: string
-  requirements: Requirement[]
-}) {
-  return (
-    <section className="flex flex-col gap-3">
-      <h3 className="text-xs font-medium uppercase tracking-wider text-blueLight/60">
-        {legend}
-      </h3>
-      {requirements.map((requirement) => (
-        <div
-          key={requirement.title}
-          className="flex items-center gap-4 rounded-xl border border-panel-border bg-white/5 p-4"
+      <div className="flex flex-col gap-3 rounded-xl border border-warning/30 bg-warning/10 p-4">
+        <p className="text-sm text-blueLightest">
+          This step isn&apos;t available on web yet. Complete it in the DosshPay
+          mobile app, and it will show as done here.
+        </p>
+        <Link
+          href="/activate"
+          className="text-sm font-medium text-accentBlue hover:text-accentBlueHover"
         >
-          <span
-            aria-hidden
-            className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/5 text-blueLight"
-          >
-            {requirement.icon}
-          </span>
-          <span className="flex flex-1 flex-col gap-0.5">
-            <span className="font-medium text-blueLightest">
-              {requirement.title}
-            </span>
-            <span className="text-sm text-blueLight">{requirement.detail}</span>
-          </span>
-          <Badge variant={requirement.necessity === "Required" ? "default" : "secondary"}>
-            {requirement.necessity}
-          </Badge>
-        </div>
-      ))}
-    </section>
-  )
-}
-
-/**
- * These four journeys are not built for web yet — identity capture, biometric
- * enrolment, the preferences workflow and payment methods each need their own
- * flow. Saying so plainly beats a button that goes nowhere.
- */
-function NotAvailableYet({ task }: { task: ActivationTaskId }) {
-  const detail =
-    task === "identity"
-      ? "Document capture isn't available on web yet."
-      : "This step isn't available on web yet."
-
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-warning/30 bg-warning/10 p-4">
-      <p className="text-sm text-blueLightest">
-        {detail} Complete it in the DosshPay mobile app, and it will show as done
-        here.
-      </p>
-      <Link
-        href="/activate"
-        className="text-sm font-medium text-accentBlue hover:text-accentBlueHover"
-      >
-        Back to activation steps
-      </Link>
+          Back to activation steps
+        </Link>
+      </div>
     </div>
   )
 }

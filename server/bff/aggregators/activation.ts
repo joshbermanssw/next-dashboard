@@ -6,6 +6,8 @@ import {
   EMPTY_ACTIVATION_SNAPSHOT,
   type ActivationStatus,
 } from "@/lib/activation"
+import { isKycComplete } from "@/lib/kyc"
+import { readKycApplication } from "@/server/kyc/store"
 
 /**
  * The KYC application has no documented response schema, and the status has
@@ -57,9 +59,14 @@ export async function getActivationStatus(
     ).catch(() => null),
   ])
 
+  // The web identity flow submits to a local store until the KYC write
+  // endpoints are wired up (see `server/kyc/store.ts`), so an application
+  // finished here counts as done even though upstream hasn't been told.
+  const localKyc = readKycApplication(customerId)
+
   return deriveActivationStatus({
     ...EMPTY_ACTIVATION_SNAPSHOT,
-    kycStatus: readKycStatus(kyc),
+    kycStatus: isKycComplete(localKyc) ? "COMPLETE" : readKycStatus(kyc),
     preferencesStatus: readPreferencesStatus(preferences),
   })
 }
